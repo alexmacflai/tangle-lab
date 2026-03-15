@@ -27,15 +27,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: tangle-explore/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: tangle-explore
 
       - name: Build site
-        run: npm run build
-        working-directory: tangle-explore
+        run: npm run build --workspace tangle-explore
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
