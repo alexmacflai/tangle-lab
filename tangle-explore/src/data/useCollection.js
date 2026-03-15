@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { useExploreStore } from '../store/useExploreStore';
 import { normalizePreparedCollection } from './dataUtils';
 
-const DATA_CANDIDATES = ['/db_explore.json', '/db_dump.json'];
+const DATA_CANDIDATES = ['db_explore.json', 'db_dump.json'].map(
+  (fileName) => `${import.meta.env.BASE_URL}${fileName}`
+);
 
 export function useCollection() {
   const setCollection = useExploreStore((state) => state.setCollection);

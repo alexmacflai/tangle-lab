@@ -1,4 +1,6 @@
-# Tangle Explore Prototype Foundation
+# tangle-lab
+
+This repository contains the Tangle Explore prototype foundation and supporting data-prep pipeline.
 
 This workspace contains the standalone explore scaffold and data-prep pipeline for graph/visualization mini-prototypes.
 
@@ -27,3 +29,15 @@ npm run dev
 ```
 
 The app routes to `/explore/:ideaId` and includes all planned idea modules as wired stubs.
+
+## Deploy To GitHub Pages
+
+Pushes to `main` can deploy the Vite app in `tangle-explore/` to GitHub Pages via Actions.
+
+Before the first deploy, enable Pages in GitHub:
+
+1. Open the repository settings.
+2. Go to `Pages`.
+3. Set `Build and deployment` to `GitHub Actions`.
+
+The deployed site will be served from the repository Pages URL and use hash-based routes for deep links.

@@ -1,0 +1,9 @@
+{
+  "name": "tangle-lab",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Root workspace metadata for the tangle-lab repository.",
+  "workspaces": [
+    "tangle-explore"
+  ]
+}
