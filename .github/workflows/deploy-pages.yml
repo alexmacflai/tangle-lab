@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build site
         run: npm run build --workspace tangle-explore
