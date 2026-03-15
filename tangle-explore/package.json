@@ -1,0 +1,35 @@
+{
+  "name": "tangle-explore",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare:data": "node ../scripts/prepare-explore-data.mjs --output ./public/db_explore.json"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@phosphor-icons/react": "^2.1.10",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
+    "d3": "^7.9.0",
+    "konva": "^9.3.20",
+    "lucide-react": "^0.511.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-force-graph-2d": "latest",
+    "react-konva": "^18.2.12",
+    "react-router-dom": "^6.30.1",
+    "recharts": "^2.15.4",
+    "three": "^0.183.1",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^7.2.0"
+  }
+}

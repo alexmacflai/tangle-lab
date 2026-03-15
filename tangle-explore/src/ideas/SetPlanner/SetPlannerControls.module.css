@@ -1,0 +1,63 @@
+.root {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) minmax(240px, 1.5fr);
+  gap: 14px;
+}
+
+.group {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.toggleButton {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.toggleActive {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.thresholdRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.thresholdRow input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.value {
+  min-width: 22px;
+  text-align: right;
+  color: var(--text);
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .root {
+    grid-template-columns: 1fr;
+  }
+}

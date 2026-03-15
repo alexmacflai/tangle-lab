@@ -1,0 +1,97 @@
+.viewport {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.state {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px;
+  max-width: 980px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.description {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+  max-width: 80ch;
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.metric {
+  min-width: 140px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  padding: 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-label);
+}
+
+.list {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+}
+
+.controlsRow {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.controlGroup {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.controlLabel {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.controlValue {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  padding: 7px 10px;
+  font-size: 12px;
+}

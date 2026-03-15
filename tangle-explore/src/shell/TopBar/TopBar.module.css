@@ -1,0 +1,39 @@
+.root {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+}
+
+.scrollRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scrollRow::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: #435D77;
+}
+
+.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
