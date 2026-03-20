@@ -22,7 +22,57 @@ const GENRE_PALETTE = [
   'Hip-Hop',
   'Downtempo',
   'Afro House',
-  'UK Bass'
+  'UK Bass',
+  'Melodic House',
+  'Progressive House',
+  'Deep House',
+  'Organic House',
+  'Indie Dance',
+  'Acid',
+  'Leftfield'
+];
+
+const TAG_PALETTE = [
+  'Peak Time',
+  'Warm Up',
+  'Afterhours',
+  'Sunrise',
+  'Sunset',
+  'Warehouse',
+  'Club',
+  'Festival',
+  'Beach',
+  'Rooftop',
+  'Driving',
+  'Hypnotic',
+  'Euphoric',
+  'Dark',
+  'Dreamy',
+  'Cosmic',
+  'Rolling',
+  'Punchy',
+  'Heavy',
+  'Minimal',
+  'Percussive',
+  'Groovy',
+  'Soulful',
+  'Deep',
+  'Melodic',
+  'Raw',
+  'Atmospheric',
+  'Textured',
+  'Bassline',
+  'Acidic',
+  'Vocal',
+  'Instrumental',
+  'Loopy',
+  'Polyrhythmic',
+  'Dubby',
+  'Late Night',
+  'Open Air',
+  'Transitional',
+  'Builder',
+  'Closer'
 ];
 
 const COLOR_PALETTE = [
@@ -49,7 +99,14 @@ const GENRE_BPM_RANGES = {
   'Hip-Hop': [78, 104],
   Downtempo: [80, 106],
   'Afro House': [114, 126],
-  'UK Bass': [128, 144]
+  'UK Bass': [128, 144],
+  'Melodic House': [120, 126],
+  'Progressive House': [122, 130],
+  'Deep House': [115, 124],
+  'Organic House': [112, 122],
+  'Indie Dance': [114, 126],
+  Acid: [128, 138],
+  Leftfield: [95, 132]
 };
 
 const COMMENT_SNIPPETS = [
@@ -151,18 +208,8 @@ function inferGenre(track, existingGenreName) {
     return pickStable(GENRE_PALETTE, existingNumeric);
   }
 
-  const bpm = track.bpm;
-  const seed = fnv1a(`genre:${track.track_id}`);
-
-  if (typeof bpm === 'number') {
-    if (bpm < 95) return pickStable(['Downtempo', 'Hip-Hop', 'Breaks'], seed);
-    if (bpm < 112) return pickStable(['Disco', 'Breaks', 'Garage'], seed);
-    if (bpm < 124) return pickStable(['House', 'Disco', 'Afro House'], seed);
-    if (bpm < 132) return pickStable(['House', 'Minimal', 'Techno'], seed);
-    if (bpm < 142) return pickStable(['Techno', 'Electro', 'UK Bass'], seed);
-    return pickStable(['Drum & Bass', 'Techno', 'Electro'], seed);
-  }
-
+  const bpmBucket = typeof track.bpm === 'number' ? Math.floor(track.bpm / 5) : 'x';
+  const seed = fnv1a(`genre:${track.track_id}:${bpmBucket}`);
   return pickStable(GENRE_PALETTE, seed);
 }
 
@@ -250,6 +297,22 @@ function generateComment(trackId, genre, bpm) {
   const seed = fnv1a(`comment:${trackId}:${genre}:${bpm ?? 'x'}`);
   const snippet = COMMENT_SNIPPETS[seed % COMMENT_SNIPPETS.length];
   return `${snippet} ${genre} @ ${bpm} BPM.`;
+}
+
+function generateTagAssignments(trackId) {
+  const seed = fnv1a(`tags:${trackId}`);
+  const desiredCount = 1 + (seed % 3);
+  const used = new Set();
+  const assignments = [];
+
+  for (let i = 0; assignments.length < desiredCount && i < TAG_PALETTE.length * 2; i += 1) {
+    const candidate = TAG_PALETTE[(seed + i * 7) % TAG_PALETTE.length];
+    if (used.has(candidate)) continue;
+    used.add(candidate);
+    assignments.push(candidate);
+  }
+
+  return assignments;
 }
 
 function buildExploreData(raw, inputPath) {
@@ -377,6 +440,50 @@ function buildExploreData(raw, inputPath) {
     tag_id: ensureGroupId(row)
   }));
 
+  const existingTagIdsByTrack = new Map();
+  for (const relation of trackTags) {
+    const bucket = existingTagIdsByTrack.get(relation.track_id) ?? new Set();
+    bucket.add(relation.tag_id);
+    existingTagIdsByTrack.set(relation.track_id, bucket);
+  }
+
+  const syntheticTagIdByName = new Map();
+  const syntheticTagNames = new Set();
+
+  function ensureSyntheticTag(name) {
+    const key = `synthetic:${name}`;
+    if (!syntheticTagIdByName.has(name)) {
+      const id = groups.length + 1;
+      syntheticTagIdByName.set(name, id);
+      groups.push({
+        id,
+        key,
+        sourceId: 0,
+        tagSource: 0,
+        tagIdAtSource: id,
+        nameRaw: name
+      });
+      syntheticTagNames.add(name);
+    }
+    return syntheticTagIdByName.get(name);
+  }
+
+  for (const track of tracksRaw) {
+    if (existingTagIdsByTrack.has(track.track_id)) continue;
+
+    const generatedTags = generateTagAssignments(track.track_id);
+    const bucket = existingTagIdsByTrack.get(track.track_id) ?? new Set();
+
+    for (const tagName of generatedTags) {
+      const tagId = ensureSyntheticTag(tagName);
+      if (bucket.has(tagId)) continue;
+      bucket.add(tagId);
+      trackTags.push({ track_id: track.track_id, tag_id: tagId });
+    }
+
+    existingTagIdsByTrack.set(track.track_id, bucket);
+  }
+
   const playlistTrackCount = new Map();
   for (const rel of trackPlaylists) {
     playlistTrackCount.set(rel.playlist_id, (playlistTrackCount.get(rel.playlist_id) ?? 0) + 1);
@@ -429,8 +536,16 @@ function buildExploreData(raw, inputPath) {
     comments: 0,
     color_id: 0,
     genre: 0,
-    color: 0
+    color: 0,
+    tags: 0
   };
+
+  const syntheticTagCountByName = new Map();
+  for (const rel of trackTags) {
+    const tag = groups.find((group) => group.id === rel.tag_id);
+    if (!tag || !syntheticTagNames.has(tag.nameRaw)) continue;
+    syntheticTagCountByName.set(tag.nameRaw, (syntheticTagCountByName.get(tag.nameRaw) ?? 0) + 1);
+  }
 
   const tracks = tracksRaw.map((track) => {
     const existingGenreRaw = genreByTrack.get(track.track_id) ?? null;
@@ -469,6 +584,7 @@ function buildExploreData(raw, inputPath) {
     if (isMissing(track.color_id)) enrichmentCounts.color_id += 1;
     if (isMissing(existingGenreRaw)) enrichmentCounts.genre += 1;
     if (isMissing(existingColorRaw)) enrichmentCounts.color += 1;
+    if (!trackTagsRaw.some((row) => row.track_id === track.track_id)) enrichmentCounts.tags += 1;
 
     genreCount.set(genreGenerated, (genreCount.get(genreGenerated) ?? 0) + 1);
 
