@@ -2,7 +2,6 @@
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-rows: var(--topbar-h, 48px) minmax(0, 1fr);
   grid-template-columns: var(--sidebar-w, 220px) minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
@@ -13,14 +12,7 @@
   grid-template-columns: 0 minmax(0, 1fr);
 }
 
-.topbar {
-  grid-column: 1 / -1;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-
 .sidebar {
-  grid-row: 2;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -33,12 +25,102 @@
 }
 
 .main {
-  grid-row: 2;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.indexPage {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  background:
+    radial-gradient(circle at top left, rgba(171, 61, 255, 0.18), transparent 32%),
+    radial-gradient(circle at right 20%, rgba(22, 49, 74, 0.9), transparent 28%),
+    linear-gradient(160deg, #020E19 0%, #071B2E 56%, #0A2238 100%);
+}
+
+.indexShell {
+  width: min(1080px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 56px 0 72px;
+}
+
+.indexHeader {
+  max-width: 720px;
+  margin-bottom: 32px;
+}
+
+.kicker {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.indexTitle {
+  margin: 0;
+  font-size: clamp(42px, 8vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.indexIntro {
+  max-width: 620px;
+  margin: 18px 0 0;
+  color: var(--neutral-200);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.indexGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.indexCard {
+  display: flex;
+  min-height: 168px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid rgba(171, 61, 255, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(171, 61, 255, 0.08), transparent 45%),
+    rgba(7, 27, 46, 0.86);
+  box-shadow: 0 18px 48px rgba(2, 14, 25, 0.35);
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.indexCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(171, 61, 255, 0.36);
+  background:
+    linear-gradient(180deg, rgba(171, 61, 255, 0.16), transparent 50%),
+    rgba(7, 27, 46, 0.92);
+}
+
+.indexCardLabel {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.indexCardMeta {
+  color: var(--neutral-300);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .loading,
@@ -53,4 +135,25 @@
 
 .error {
   color: #AB3DFF;
+}
+
+@media (max-width: 720px) {
+  .indexShell {
+    width: min(100% - 24px, 1080px);
+    padding: 32px 0 48px;
+  }
+
+  .indexIntro {
+    font-size: 16px;
+  }
+
+  .indexCard {
+    min-height: 148px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .indexCardLabel {
+    font-size: 21px;
+  }
 }
