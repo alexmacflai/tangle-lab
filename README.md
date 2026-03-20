@@ -14,11 +14,11 @@ This workspace contains the standalone explore scaffold and data-prep pipeline f
 ```bash
 cd /Users/alexcruz/Projects/dev/tangle-lab
 node scripts/prepare-explore-data.mjs \
-  --input /Users/alexcruz/Desktop/delete/db_dump_2026-02-22T14-35-09-892006Z.json \
+  --input /Users/alexcruz/Projects/dev/tangle-lab/db_dump_2026-03-20T18-15-54-502152Z.json \
   --output /Users/alexcruz/Projects/dev/tangle-lab/tangle-explore/public/db_explore.json
 ```
 
-You can also set `TANGLE_DB_DUMP` and omit `--input`.
+If you omit `--input`, the script will use the repo-root dump file first, or `TANGLE_DB_DUMP` when that env var is set.
 
 ## Run App
 

@@ -4,8 +4,7 @@ import path from 'node:path';
 
 const DEFAULT_INPUT_CANDIDATES = [
   process.env.TANGLE_DB_DUMP,
-  '/Users/alexcruz/Downloads/db_dump_2026-02-13T10-35-43-566727Z.json',
-  '/Users/alexcruz/Desktop/delete/db_dump_2026-02-22T14-35-09-892006Z.json',
+  path.resolve(process.cwd(), 'db_dump_2026-03-20T18-15-54-502152Z.json'),
   path.resolve(process.cwd(), 'db_dump.json')
 ].filter(Boolean);
 const DEFAULT_OUTPUT = path.resolve(process.cwd(), 'tangle-explore/public/db_explore.json');
