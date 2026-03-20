@@ -1,14 +1,37 @@
 import React, { Suspense, useMemo } from 'react';
-import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useCollection } from './data/useCollection';
 import { useExploreStore } from './store/useExploreStore';
 import { IDEAS, getIdeaById } from './ideas';
 import { IdeaRenderer } from './ideas/IdeaRenderer';
-import { TopBar } from './shell/TopBar/TopBar';
 import { Sidebar } from './shell/Sidebar/Sidebar';
 import { BottomBar } from './shell/BottomBar/BottomBar';
 import { ErrorBoundary } from './shell/ErrorBoundary';
 import styles from './App.module.css';
+
+function PrototypeIndexRoute() {
+  return (
+    <div className={styles.indexPage}>
+      <div className={styles.indexShell}>
+        <div className={styles.indexHeader}>
+          <p className={styles.kicker}>Tangle Lab</p>
+          <h1 className={styles.indexTitle}>Prototype Index</h1>
+          <p className={styles.indexIntro}>
+            Explore each prototype as its own destination. Pick one to enter the experience directly.
+          </p>
+        </div>
+        <div className={styles.indexGrid}>
+          {IDEAS.map((idea) => (
+            <Link key={idea.id} to={`/explore/${idea.id}`} className={styles.indexCard}>
+              <span className={styles.indexCardLabel}>{idea.label}</span>
+              <span className={styles.indexCardMeta}>Open prototype</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ExploreRoute() {
   const { ideaId } = useParams();
@@ -31,9 +54,6 @@ function ExploreRoute() {
 
   return (
     <div className={rootClassName}>
-      <div className={styles.topbar}>
-        <TopBar ideas={IDEAS} activeIdeaId={activeIdea?.id ?? IDEAS[0].id} />
-      </div>
       <div className={styles.sidebar}>
         <Sidebar collection={collection} />
       </div>
@@ -58,9 +78,9 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={`/explore/${IDEAS[0].id}`} replace />} />
+      <Route path="/" element={<PrototypeIndexRoute />} />
       <Route path="/explore/:ideaId" element={<ExploreRoute />} />
-      <Route path="*" element={<Navigate to={`/explore/${IDEAS[0].id}`} replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
