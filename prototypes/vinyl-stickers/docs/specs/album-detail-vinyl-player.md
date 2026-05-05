@@ -24,10 +24,17 @@ Layout:
 Components:
 
 - Sleeve display with visible sleeve stickers.
-- Vinyl display with grooves, static glare, and vinyl stickers.
+- Vinyl display with a fixed base/glare layer, spinning dust texture, spinning center art, and a spinning clipped sticker surface.
 - Metadata panel with album title, artist, year, and track list.
 - Playback controls for play/pause and visible progress.
 - Sticker tray with available stickers or current album stickers.
+
+Vinyl layer order:
+
+1. Base vinyl image. Supports color variants later; does not spin during playback.
+2. Dust texture. Spins during playback.
+3. Center art image. Comes from album media later; spins during playback.
+4. Sticker container. Circular, clips stickers outside the disc, and spins during playback.
 
 Playback surface states:
 

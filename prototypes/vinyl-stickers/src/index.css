@@ -519,6 +519,88 @@ p {
   color: #a7b0ba;
 }
 
+.vinyl-disc {
+  position: relative;
+  width: var(--vinyl-size);
+  height: var(--vinyl-size);
+  border-radius: 50%;
+  filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.38));
+  isolation: isolate;
+}
+
+.vinyl-disc__layer,
+.vinyl-disc__spinning-layers,
+.vinyl-disc__stickers {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.vinyl-disc__layer {
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.vinyl-disc__base {
+  z-index: 1;
+}
+
+.vinyl-disc__spinning-layers {
+  z-index: 2;
+  animation: vinyl-spin 5.45s linear infinite;
+  animation-play-state: paused;
+  transform-origin: 50% 50%;
+}
+
+.vinyl-disc.is-playing .vinyl-disc__spinning-layers {
+  animation-play-state: running;
+}
+
+.vinyl-disc__dust {
+  opacity: 0.48;
+  mix-blend-mode: screen;
+}
+
+.vinyl-disc__art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 35.25%;
+  height: 35.25%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+.vinyl-disc__stickers {
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vinyl-disc__sticker {
+  position: absolute;
+  left: var(--sticker-x);
+  top: var(--sticker-y);
+  width: var(--sticker-width);
+  height: var(--sticker-height);
+  object-fit: contain;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45));
+  transform: translate(-50%, -50%) rotate(var(--sticker-rotation));
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .playground-panel {
   border-top: 1px solid #202a34;
   background: #10151a;
@@ -610,6 +692,12 @@ p {
 
 .playground-card__album {
   width: 480px;
+}
+
+.playground-card__vinyl {
+  display: grid;
+  min-height: 548px;
+  place-items: center;
 }
 
 .playground-card__carousel {

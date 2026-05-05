@@ -4,10 +4,12 @@ import { AlbumCard } from "./AlbumCard.jsx";
 import { LibraryCarousel } from "./LibraryCarousel.jsx";
 import { LibraryHeader } from "./LibraryHeader.jsx";
 import { StickerStrip } from "./StickerStrip.jsx";
+import { VinylDisc } from "./VinylDisc.jsx";
 
 const searchStates = ["default", "focused", "filled", "disabled"];
 const sortStates = ["default", "open", "disabled"];
 const albumStates = ["focused", "resting"];
+const vinylStates = ["paused", "playing"];
 
 function PlaygroundControl({ id, label, value, options, onChange }) {
   return (
@@ -28,6 +30,7 @@ export function ComponentsPlayground() {
   const [albumState, setAlbumState] = useState("focused");
   const [searchState, setSearchState] = useState("default");
   const [sortState, setSortState] = useState("default");
+  const [vinylState, setVinylState] = useState("paused");
   const activeAlbum = useMemo(() => libraryAlbums.find((album) => album.id === "vind"), []);
 
   return (
@@ -60,6 +63,13 @@ export function ComponentsPlayground() {
               options={sortStates}
               onChange={setSortState}
             />
+            <PlaygroundControl
+              id="vinyl-state"
+              label="Vinyl"
+              value={vinylState}
+              options={vinylStates}
+              onChange={setVinylState}
+            />
           </div>
         </div>
 
@@ -73,6 +83,13 @@ export function ComponentsPlayground() {
             <p className="playground-card__label">Album card</p>
             <div className="playground-card__album">
               <AlbumCard album={activeAlbum} state={albumState} showStickers={false} />
+            </div>
+          </div>
+
+          <div className="playground-card">
+            <p className="playground-card__label">Vinyl disc</p>
+            <div className="playground-card__vinyl">
+              <VinylDisc isPlaying={vinylState === "playing"} />
             </div>
           </div>
 
