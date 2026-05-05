@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { libraryAlbums, stickerAssets } from "../data/libraryMock.js";
 import { AlbumCard } from "./AlbumCard.jsx";
+import { LibraryCarousel } from "./LibraryCarousel.jsx";
 import { LibraryHeader } from "./LibraryHeader.jsx";
 import { StickerStrip } from "./StickerStrip.jsx";
 
@@ -71,7 +72,14 @@ export function ComponentsPlayground() {
           <div className="playground-card">
             <p className="playground-card__label">Album card</p>
             <div className="playground-card__album">
-              <AlbumCard album={activeAlbum} state={albumState} />
+              <AlbumCard album={activeAlbum} state={albumState} showStickers={false} />
+            </div>
+          </div>
+
+          <div className="playground-card playground-card--wide">
+            <p className="playground-card__label">Carousel</p>
+            <div className="playground-card__carousel">
+              <LibraryCarousel albums={libraryAlbums} />
             </div>
           </div>
 

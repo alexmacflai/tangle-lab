@@ -1,7 +1,7 @@
 :root {
   color: #e6edf3;
   background: #0b0e12;
-  font-family: Inter, "Avenir Next", "Segoe UI", sans-serif;
+  font-family: Inter, "Inter var", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.4;
   font-synthesis: none;
   text-rendering: geometricPrecision;
@@ -57,7 +57,12 @@ p {
 
 .icon--heart {
   fill: currentColor;
+  fill-opacity: 0;
   stroke: currentColor;
+}
+
+.icon--heart-filled {
+  fill-opacity: 1;
 }
 
 .icon--plus {
@@ -242,6 +247,11 @@ p {
   overflow: hidden;
   padding: 10px;
   perspective: 1400px;
+  user-select: none;
+}
+
+.carousel-preview.is-dragging {
+  cursor: grabbing;
 }
 
 .carousel-preview__stage {
@@ -256,15 +266,22 @@ p {
   left: 0;
   top: 0;
   width: 480px;
+  color: inherit;
+  cursor: pointer;
   opacity: var(--slot-opacity);
   transform:
-    translate3d(var(--slot-x), var(--slot-y), 0)
+    translate3d(calc(var(--slot-x) + var(--drag-offset, 0px)), var(--slot-y), 0)
     rotateY(var(--slot-rotate-y))
     rotateZ(var(--slot-rotate-z))
     scale(var(--slot-scale));
   transform-origin: center center;
   transform-style: preserve-3d;
   z-index: var(--slot-z);
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease;
+}
+
+.carousel-preview.is-dragging .carousel-preview__slot {
+  transition: none;
 }
 
 .carousel-preview__slot::after {
@@ -287,23 +304,26 @@ p {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 2px solid #ffffff;
   border-radius: 8px;
   background: #141a20;
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
 }
 
 .album-card--focused .album-card__cover-wrap {
-  border: 4px solid #7c5cff;
-  box-shadow:
-    inset 0 0 0 2px #ffffff,
-    0 16px 45px rgba(0, 0, 0, 0.3);
+  outline: 4px solid #ffffff;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 2px #7c5cff;
 }
 
 .album-card__cover {
+  border-radius: 8px;
   width: 100%;
   height: 100%;
   object-fit: cover;
   pointer-events: none;
+  transform: translateX(var(--slot-cover-x, 0px));
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .album-card__sticker {
@@ -333,8 +353,9 @@ p {
   overflow: hidden;
   color: #e6edf3;
   font-size: 36px;
-  font-weight: 650;
-  line-height: 1.1;
+  font-family: Inter, "Inter var", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600;
+  line-height: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -344,7 +365,9 @@ p {
   overflow: hidden;
   color: #a7b0ba;
   font-size: 24px;
-  line-height: 1.1;
+  font-family: Inter, "Inter var", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  line-height: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -379,8 +402,12 @@ p {
   cursor: pointer;
 }
 
-.album-card__action:first-child {
+.album-card__favorite.is-active {
   color: #7c5cff;
+}
+
+.album-card__action .icon {
+  fill: currentColor;
 }
 
 .album-card__action:hover {
@@ -451,19 +478,19 @@ p {
   filter: drop-shadow(0 4px 4px rgba(11, 14, 18, 0.5));
   padding: 0;
   touch-action: none;
-  transform: rotate(0deg) scale(1);
+  transform: rotate(var(--sticker-rotation)) scale(1);
   transition: filter 140ms ease, transform 140ms ease;
 }
 
 .sticker-item:hover {
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.42));
-  transform: translateY(-2px) scale(1.04);
+  transform: translateY(-2px) rotate(var(--sticker-rotation)) scale(1.04);
 }
 
 .sticker-item.is-grabbing {
   cursor: grabbing;
   filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.56));
-  transform: rotate(var(--grab-rotation)) scale(1.14);
+  transform: rotate(var(--sticker-rotation)) scale(1.14);
 }
 
 .sticker-item img {
@@ -583,6 +610,14 @@ p {
 
 .playground-card__album {
   width: 480px;
+}
+
+.playground-card__carousel {
+  margin: -24px;
+}
+
+.playground-card__carousel .carousel-preview {
+  min-height: 690px;
 }
 
 @media (max-width: 1280px) {

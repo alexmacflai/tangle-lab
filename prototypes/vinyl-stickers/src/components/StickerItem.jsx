@@ -1,22 +1,20 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-function stableRotation(seed) {
-  let hash = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = (hash * 31 + seed.charCodeAt(index)) % 1000;
-  }
-  return Math.round((hash / 999) * 30 - 15);
+function randomRotation() {
+  return Math.round(Math.random() * 30 - 15);
 }
 
 export function StickerItem({ sticker, interactive = true, className = "" }) {
   const [isGrabbing, setIsGrabbing] = useState(false);
-  const grabRotation = useMemo(() => stableRotation(sticker.id), [sticker.id]);
+  const [rotation, setRotation] = useState(0);
 
   function handlePointerDown(event) {
     if (!interactive) {
       return;
     }
+    event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
+    setRotation(randomRotation());
     setIsGrabbing(true);
   }
 
@@ -24,6 +22,7 @@ export function StickerItem({ sticker, interactive = true, className = "" }) {
     if (!interactive) {
       return;
     }
+    event.stopPropagation();
     event.currentTarget.releasePointerCapture(event.pointerId);
     setIsGrabbing(false);
   }
@@ -40,7 +39,7 @@ export function StickerItem({ sticker, interactive = true, className = "" }) {
       style={{
         "--sticker-width": `${sticker.width}px`,
         "--sticker-height": `${sticker.height}px`,
-        "--grab-rotation": `${grabRotation}deg`,
+        "--sticker-rotation": `${rotation}deg`,
       }}
     >
       <img src={sticker.src} alt="" draggable="false" />

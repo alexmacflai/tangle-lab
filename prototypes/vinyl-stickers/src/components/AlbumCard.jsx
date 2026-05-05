@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { HeartIcon, MoreIcon } from "./Icons.jsx";
 
 export function AlbumCard({
   album,
   state = "resting",
-  showStickers = true,
+  showStickers = false,
+  initialFavorite = false,
   className = "",
 }) {
+  const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const isFocused = state === "focused";
 
   return (
@@ -35,10 +38,26 @@ export function AlbumCard({
           <p>{album.artist}</p>
         </div>
         <div className="album-card__actions" aria-hidden={!isFocused}>
-          <button className="album-card__action" type="button" aria-label="Like album">
-            <HeartIcon />
+          <button
+            className={`album-card__action album-card__favorite ${isFavorite ? "is-active" : ""}`}
+            type="button"
+            aria-label={isFavorite ? "Remove favorite" : "Favorite album"}
+            aria-pressed={isFavorite}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsFavorite((current) => !current);
+            }}
+          >
+            <HeartIcon filled={isFavorite} />
           </button>
-          <button className="album-card__action" type="button" aria-label="More options">
+          <button
+            className="album-card__action"
+            type="button"
+            aria-label="More options"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
             <MoreIcon />
           </button>
         </div>

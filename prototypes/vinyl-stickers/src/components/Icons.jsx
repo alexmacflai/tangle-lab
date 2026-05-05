@@ -15,9 +15,13 @@ export function ChevronDownIcon() {
   );
 }
 
-export function HeartIcon() {
+export function HeartIcon({ filled = false }) {
   return (
-    <svg className="icon icon--heart" viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      className={`icon icon--heart ${filled ? "icon--heart-filled" : ""}`}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path d="M20.8 5.9c-1.7-2-4.7-2.1-6.6-.2L12 7.9 9.8 5.7C7.9 3.8 4.9 3.9 3.2 5.9 1.6 7.8 1.8 10.8 3.7 12.6L12 20.5l8.3-7.9c1.9-1.8 2.1-4.8.5-6.7Z" />
     </svg>
   );
