@@ -23,17 +23,22 @@ Implementation must follow these stages in order:
    - Add root npm scripts for dev and build if needed.
    - Stop for user review.
 
-2. **Static Album Detail Components**
+2. **Library Component Foundation**
+   - Build library-view components from the supplied Figma frames: album card, library header, search control, sort control, sticker strip, sticker item, and static carousel preview.
+   - Add a components playground as the runnable review surface.
+   - Use hardcoded mock data and local media assets.
+   - Include focused/resting album card states and screenshot-driven carousel position variants.
+   - Include display-only sticker grabbing states for scale, shadow, cursor, and small randomized rotation.
+   - Do not connect to JSON data.
+   - Do not add carousel drag, momentum, snapping, or detail transition.
+   - Do not build album detail/player UI.
+   - Stop for user review.
+
+3. **Static Album Detail Components**
    - Build sleeve, vinyl, metadata panel, playback controls, and sticker tray with hardcoded mock data.
    - Do not connect to JSON data.
    - Do not connect real audio.
    - Do not link from the carousel.
-   - Stop for user review.
-
-3. **Static Collection Components**
-   - Build sleeve card and center-focused carousel layout with hardcoded mock data.
-   - Include focused, adjacent, and far visual states.
-   - Do not add real data loading, snapping physics, or detail transition yet.
    - Stop for user review.
 
 4. **Data + Media Wiring**
@@ -78,7 +83,8 @@ Implementation must follow these stages in order:
 
 - Every implementation stage has a clear stop point.
 - The first stage is environment setup, not visual feature work.
-- Static detail work happens before database and carousel integration.
+- Library component foundation happens before database and carousel integration.
+- Album detail work waits until after the library component foundation review.
 - Static collection work happens before carousel physics.
 - Audio remains stubbed until after visual and data stages are reviewed.
 

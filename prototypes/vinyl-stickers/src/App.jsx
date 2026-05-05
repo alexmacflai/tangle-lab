@@ -1,8 +1,10 @@
+import { ComponentsPlayground } from "./components/ComponentsPlayground.jsx";
+import { LibraryPrototype } from "./components/LibraryPrototype.jsx";
+
 export default function App() {
-  return (
-    <main className="app">
-      <h1>Vinyl Stickers</h1>
-      <p>Stage 1 scaffold is running.</p>
-    </main>
-  );
+  if (window.location.pathname === "/components") {
+    return <ComponentsPlayground />;
+  }
+
+  return <LibraryPrototype />;
 }
