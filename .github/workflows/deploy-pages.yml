@@ -33,7 +33,7 @@ jobs:
         run: npm install
 
       - name: Install Rollup Linux binary
-        run: npm install --no-save @rollup/rollup-linux-x64-gnu@$(node -p "require('./tangle-explore/node_modules/rollup/package.json').version")
+        run: npm install --no-save @rollup/rollup-linux-x64-gnu@$(node -p "require('rollup/package.json').version")
 
       - name: Build site
         run: npm run build --workspace tangle-explore
@@ -44,7 +44,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: tangle-explore/dist
+          path: prototypes/tangle-explore/dist
 
   deploy:
     environment:

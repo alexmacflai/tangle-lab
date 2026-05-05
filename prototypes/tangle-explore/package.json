@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare:data": "node ../scripts/prepare-explore-data.mjs --output ./public/db_explore.json"
+    "prepare:data": "node ../../scripts/prepare-explore-data.mjs --output ./public/db_explore.json"
   },
   "dependencies": {
+    "@tangle-lab/shared": "file:../../packages/shared",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

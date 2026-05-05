@@ -7,7 +7,7 @@ const DEFAULT_INPUT_CANDIDATES = [
   path.resolve(process.cwd(), 'db_dump_2026-03-20T18-15-54-502152Z.json'),
   path.resolve(process.cwd(), 'db_dump.json')
 ].filter(Boolean);
-const DEFAULT_OUTPUT = path.resolve(process.cwd(), 'tangle-explore/public/db_explore.json');
+const DEFAULT_OUTPUT = path.resolve(process.cwd(), 'prototypes/tangle-explore/public/db_explore.json');
 
 const GENRE_PALETTE = [
   'House',
