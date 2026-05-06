@@ -13,7 +13,6 @@
 
 body {
   min-width: 1100px;
-  min-height: 100vh;
   margin: 0;
   background: #0b0e12;
   color: #e6edf3;
@@ -85,7 +84,7 @@ p {
 
 .library-preview {
   display: flex;
-  min-height: 900px;
+  height: 100vh;
   flex-direction: column;
   overflow: hidden;
   background: #0b0e12;
@@ -100,11 +99,11 @@ p {
 
 .library-header {
   display: flex;
+  flex-shrink: 0;
   width: 100%;
   align-items: flex-end;
   justify-content: space-between;
   padding: 40px 64px;
-  background: #0b0e12;
 }
 
 .library-header__title {
@@ -255,12 +254,12 @@ p {
 
 .carousel-preview {
   display: flex;
-  min-height: 600px;
   flex: 1;
+  min-height: 0;
+  position: relative;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 10px;
   perspective: 1400px;
   user-select: none;
 }
@@ -270,52 +269,91 @@ p {
   font-size: 16px;
 }
 
-.carousel-preview.is-dragging {
-  cursor: grabbing;
+.carousel-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--card-width, 480px) * 2);
+  height: calc(var(--card-width, 480px) * 2);
+  transform: translate(-50%, -50%) scale(var(--carousel-scale, 1));
+  border-radius: 32px;
+  overflow: hidden;
+  filter: blur(48px);
+  z-index: 0;
+}
+
+.carousel-bg__layer {
+  position: absolute;
+  inset: -6%;
+  overflow: hidden;
+  transition: opacity 700ms linear;
+}
+
+.carousel-bg__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .carousel-preview__stage {
   position: relative;
-  width: 480px;
-  height: 640px;
+  width: var(--card-width, 480px);
+  height: calc(var(--card-width, 480px) * 1.3333333);
   transform-style: preserve-3d;
+  z-index: 1;
 }
 
 .carousel-preview__slot {
   position: absolute;
   left: 0;
   top: 0;
-  width: 480px;
+  width: var(--card-width, 480px);
   color: inherit;
   cursor: pointer;
+  outline: none;
   opacity: var(--slot-opacity);
+  --slot-lift: 0px;
+  --slot-spacing: 1.15;
   transform:
-    translate3d(calc(var(--slot-x) + var(--drag-offset, 0px)), var(--slot-y), 0)
+    translate3d(
+      calc(var(--slot-x) * var(--sleeve-scale, 1) * var(--slot-spacing)),
+      calc((var(--slot-y) + var(--slot-lift)) * var(--sleeve-scale, 1)),
+      0
+    )
     rotateY(var(--slot-rotate-y))
     rotateZ(var(--slot-rotate-z))
     scale(var(--slot-scale));
   transform-origin: center center;
   transform-style: preserve-3d;
   z-index: var(--slot-z);
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease;
+  transition:
+    transform var(--carousel-transition-duration, 260ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity calc(var(--carousel-transition-duration, 260ms) * 0.7) ease;
 }
 
-.carousel-preview.is-dragging .carousel-preview__slot {
-  transition: none;
+.carousel-preview__slot:focus-visible {
+  outline: none;
 }
 
-.carousel-preview__slot::after {
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  background: #0b0e12;
-  content: "";
-  opacity: var(--slot-darkness);
+.carousel-preview__slot:not([data-carousel-offset="0"]):hover {
+  --slot-lift: -12px;
+}
+
+.carousel-preview__slot[data-carousel-offset="0"]:hover {
+  transform:
+    translate3d(0px, calc(0px + var(--slot-lift, 0px)), 0)
+    rotateY(0deg)
+    rotateZ(0deg)
+    scale(1.025);
+  --slot-lift: -6px;
+}
+
+.carousel-preview__slot[data-carousel-clickable="false"] {
   pointer-events: none;
 }
 
 .album-card {
-  width: 480px;
+  width: var(--card-width, 480px);
   color: #e6edf3;
 }
 
@@ -330,6 +368,16 @@ p {
   outline-offset: -2px;
 }
 
+.album-card__cover-wrap::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: #0b0e12;
+  content: "";
+  opacity: var(--slot-darkness);
+  pointer-events: none;
+}
+
 .album-card--focused .album-card__cover-wrap {
   outline: 4px solid #ffffff;
   outline-offset: -4px;
@@ -342,16 +390,14 @@ p {
   height: 100%;
   object-fit: cover;
   pointer-events: none;
-  transform: translateX(var(--slot-cover-x, 0px));
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .album-card__sticker {
   position: absolute;
   left: var(--sticker-x);
   top: var(--sticker-y);
-  width: var(--sticker-width);
-  height: var(--sticker-height);
+  width: calc(var(--sticker-width) * var(--sleeve-scale, 1));
+  height: calc(var(--sticker-height) * var(--sleeve-scale, 1));
   filter: drop-shadow(0 4px 5px rgba(11, 14, 18, 0.45));
   object-fit: contain;
   pointer-events: none;
@@ -363,6 +409,8 @@ p {
   align-items: flex-end;
   justify-content: space-between;
   padding: 24px 24px 40px;
+  opacity: calc(1 - var(--slot-darkness));
+  transition: opacity calc(var(--carousel-transition-duration, 260ms) * 0.7) ease;
 }
 
 .album-card__copy {
@@ -436,6 +484,7 @@ p {
 
 .sticker-strip {
   display: flex;
+  flex-shrink: 0;
   width: 100%;
   align-items: center;
   gap: 24px;
@@ -911,7 +960,4 @@ p {
     padding-right: 40px;
   }
 
-  .carousel-preview__stage {
-    transform: scale(0.86);
-  }
 }
