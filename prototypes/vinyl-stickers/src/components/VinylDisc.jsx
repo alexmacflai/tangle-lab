@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { FALLBACK_VINYL_ART } from "../data/useAlbums.js";
+
 const placeholderStickers = [
   {
     id: "vinyl-star",
@@ -25,10 +28,16 @@ export function VinylDisc({
   isPlaying = false,
   baseImage = "/media/vinyl/base-black.png",
   dustImage = "/media/vinyl/dust.png",
-  artImage = "/media/vinyl/art-placeholder.png",
+  artImage = FALLBACK_VINYL_ART,
   stickers = placeholderStickers,
   size = 420,
 }) {
+  const [artSrc, setArtSrc] = useState(artImage || FALLBACK_VINYL_ART);
+
+  useEffect(() => {
+    setArtSrc(artImage || FALLBACK_VINYL_ART);
+  }, [artImage]);
+
   return (
     <div
       className={`vinyl-disc ${isPlaying ? "is-playing" : ""}`}
@@ -38,7 +47,14 @@ export function VinylDisc({
       <img className="vinyl-disc__layer vinyl-disc__base" src={baseImage} alt="" />
       <div className="vinyl-disc__spinning-layers">
         <img className="vinyl-disc__layer vinyl-disc__dust" src={dustImage} alt="" />
-        <img className="vinyl-disc__art" src={artImage} alt="" />
+        <div className="vinyl-disc__art-wrap" aria-hidden="true">
+          <img
+            className="vinyl-disc__art"
+            src={artSrc}
+            alt=""
+            onError={() => setArtSrc(FALLBACK_VINYL_ART)}
+          />
+        </div>
         <div className="vinyl-disc__stickers" aria-hidden="true">
           {stickers.map((sticker) => (
             <img

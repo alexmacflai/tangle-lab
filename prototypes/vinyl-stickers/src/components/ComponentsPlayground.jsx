@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { libraryAlbums, stickerAssets } from "../data/libraryMock.js";
+import { useAlbums } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
 import { AlbumCard } from "./AlbumCard.jsx";
 import { LibraryCarousel } from "./LibraryCarousel.jsx";
@@ -28,11 +29,18 @@ function PlaygroundControl({ id, label, value, options, onChange }) {
 }
 
 export function ComponentsPlayground() {
+  const { albums, isLoading, error } = useAlbums();
   const [albumState, setAlbumState] = useState("focused");
   const [searchState, setSearchState] = useState("default");
   const [sortState, setSortState] = useState("default");
   const [vinylState, setVinylState] = useState("paused");
-  const activeAlbum = useMemo(() => libraryAlbums.find((album) => album.id === "vind"), []);
+  const activeAlbum = useMemo(() => {
+    if (albums.length > 0) {
+      return albums.find((album) => album.id === "ctm-vind") ?? albums[0];
+    }
+
+    return libraryAlbums.find((album) => album.id === "vind") ?? libraryAlbums[0];
+  }, [albums]);
 
   return (
     <main className="playground">
@@ -75,6 +83,8 @@ export function ComponentsPlayground() {
         </div>
 
         <div className="playground-grid">
+          {isLoading && <p className="library-preview__status">Loading collection...</p>}
+          {error && <p className="library-preview__status">{error}</p>}
           <div className="playground-card playground-card--wide">
             <p className="playground-card__label">Header</p>
             <LibraryHeader searchState={searchState} sortState={sortState} />
@@ -90,21 +100,25 @@ export function ComponentsPlayground() {
           <div className="playground-card">
             <p className="playground-card__label">Vinyl disc</p>
             <div className="playground-card__vinyl">
-              <VinylDisc isPlaying={vinylState === "playing"} />
+              <VinylDisc
+                isPlaying={vinylState === "playing"}
+                artImage={activeAlbum?.vinylArt}
+                stickers={activeAlbum?.stickers}
+              />
             </div>
           </div>
 
           <div className="playground-card">
             <p className="playground-card__label">Album info + playback</p>
             <div className="playground-card__details">
-              <AlbumInfoPlaybackPanel />
+              <AlbumInfoPlaybackPanel album={activeAlbum} />
             </div>
           </div>
 
           <div className="playground-card playground-card--wide">
             <p className="playground-card__label">Carousel</p>
             <div className="playground-card__carousel">
-              <LibraryCarousel albums={libraryAlbums} />
+              <LibraryCarousel albums={albums} />
             </div>
           </div>
 

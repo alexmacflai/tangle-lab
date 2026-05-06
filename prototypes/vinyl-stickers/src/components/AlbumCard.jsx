@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { HeartIcon, MoreIcon } from "./Icons.jsx";
 
 export function AlbumCard({
@@ -9,12 +10,22 @@ export function AlbumCard({
   className = "",
 }) {
   const [isFavorite, setIsFavorite] = useState(initialFavorite);
+  const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
   const isFocused = state === "focused";
+
+  useEffect(() => {
+    setCoverSrc(album.cover || FALLBACK_COVER);
+  }, [album.cover]);
 
   return (
     <article className={`album-card album-card--${state} ${className}`}>
       <div className="album-card__cover-wrap">
-        <img className="album-card__cover" src={album.cover} alt="" />
+        <img
+          className="album-card__cover"
+          src={coverSrc}
+          alt=""
+          onError={() => setCoverSrc(FALLBACK_COVER)}
+        />
         {showStickers &&
           album.stickers?.map((sticker) => (
             <img

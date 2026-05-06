@@ -86,24 +86,36 @@ function wrapIndex(index, length) {
 }
 
 export function LibraryCarousel({ albums }) {
+  const albumCount = albums.length;
+  const hasAlbums = albumCount > 0;
+  const isSingleAlbum = albumCount === 1;
+  const visibleOffsets = isSingleAlbum ? [0] : [-3, -2, -1, 0, 1, 2, 3];
   const [focusedIndex, setFocusedIndex] = useState(2);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef(null);
 
   const slots = useMemo(
     () =>
-      [-3, -2, -1, 0, 1, 2, 3].map((offset) => ({
+      visibleOffsets.map((offset) => ({
         offset,
-        album: albums[wrapIndex(focusedIndex + offset, albums.length)],
+        album: albums[wrapIndex(focusedIndex + offset, albumCount)],
       })),
-    [albums, focusedIndex],
+    [albums, focusedIndex, visibleOffsets, albumCount],
   );
 
   function moveFocus(delta) {
-    setFocusedIndex((current) => wrapIndex(current + delta, albums.length));
+    if (albumCount <= 1) {
+      return;
+    }
+
+    setFocusedIndex((current) => wrapIndex(current + delta, albumCount));
   }
 
   function handlePointerDown(event) {
+    if (!hasAlbums || isSingleAlbum) {
+      return;
+    }
+
     const clickedSlot = event.target.closest("[data-carousel-offset]");
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -143,6 +155,10 @@ export function LibraryCarousel({ albums }) {
   }
 
   function handlePointerUp(event) {
+    if (!hasAlbums || isSingleAlbum || !dragRef.current) {
+      return;
+    }
+
     event.currentTarget.releasePointerCapture(event.pointerId);
     const wasClick = dragRef.current && !dragRef.current.hasMoved;
     const clickedOffset = dragRef.current?.clickedOffset ?? 0;
@@ -158,6 +174,10 @@ export function LibraryCarousel({ albums }) {
   }
 
   function handleCardClick(offset) {
+    if (!hasAlbums || isSingleAlbum) {
+      return;
+    }
+
     if (dragRef.current?.hasMoved || offset === 0) {
       return;
     }
@@ -172,6 +192,14 @@ export function LibraryCarousel({ albums }) {
 
     event.preventDefault();
     handleCardClick(offset);
+  }
+
+  if (!hasAlbums) {
+    return (
+      <section className="carousel-preview" aria-label="Library carousel">
+        <p className="carousel-preview__empty">No albums available yet.</p>
+      </section>
+    );
   }
 
   return (
