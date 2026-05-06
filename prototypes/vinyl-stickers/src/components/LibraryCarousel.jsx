@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AlbumCard } from "./AlbumCard.jsx";
+import { CarouselBlurBackground } from "./CarouselBlurBackground.jsx";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 
 const VISIBLE_OFFSETS = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
@@ -153,11 +154,6 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
   const visibleOffsets = isSingleAlbum ? SINGLE_OFFSETS : VISIBLE_OFFSETS;
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(260);
-  const [layoutVars, setLayoutVars] = useState({
-    "--carousel-scale": 1,
-    "--sleeve-scale": 1,
-    "--card-width": "480px",
-  });
   const sectionRef = useRef(null);
   const [bgLayers, setBgLayers] = useState([
     { src: FALLBACK_COVER, active: true },
@@ -209,18 +205,9 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
       if (h === 0) return false;
       const scale = Math.max(0.4, Math.min(1.35, (h * 0.92) / BASE_STAGE_HEIGHT));
       const sleeveScale = Math.max(0.55, Math.min(1.25, scale));
-      const nextVars = {
-        "--carousel-scale": scale,
-        "--sleeve-scale": sleeveScale,
-        "--card-width": `${Math.round(480 * sleeveScale)}px`,
-      };
-      setLayoutVars((prev) =>
-        prev["--carousel-scale"] === nextVars["--carousel-scale"]
-        && prev["--sleeve-scale"] === nextVars["--sleeve-scale"]
-        && prev["--card-width"] === nextVars["--card-width"]
-          ? prev
-          : nextVars,
-      );
+      el.style.setProperty("--carousel-scale", scale);
+      el.style.setProperty("--sleeve-scale", sleeveScale);
+      el.style.setProperty("--card-width", `${Math.round(480 * sleeveScale)}px`);
       return true;
     };
 
@@ -300,30 +287,12 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
       ref={sectionRef}
       className="carousel-preview"
       aria-label="Library carousel"
-      style={{
-        ...layoutVars,
-        "--carousel-transition-duration": `${transitionDuration}ms`,
-      }}
+      style={{ "--carousel-transition-duration": `${transitionDuration}ms` }}
       onTransitionEnd={() => setTransitionDuration(260)}
     >
       {hasAlbums ? (
         <>
-          <div className="carousel-bg" aria-hidden="true">
-            {bgLayers.map((layer, i) => (
-              <div
-                key={i}
-                className="carousel-bg__layer"
-                style={{ opacity: layer.active ? 1 : 0 }}
-              >
-                <img
-                  src={layer.src}
-                  className="carousel-bg__img"
-                  alt=""
-                  onError={(e) => { e.currentTarget.src = FALLBACK_COVER; }}
-                />
-              </div>
-            ))}
-          </div>
+          <CarouselBlurBackground layers={bgLayers} fallbackSrc={FALLBACK_COVER} />
           <div className="carousel-preview__stage">
             {slots.map((slot) => (
               <div

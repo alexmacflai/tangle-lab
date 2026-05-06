@@ -107,28 +107,6 @@ p {
   color: #e6edf3;
 }
 
-.detail-bg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(90vw, 1320px);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 32px;
-  overflow: hidden;
-  filter: blur(48px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.detail-bg__img {
-  position: absolute;
-  inset: -6%;
-  width: 112%;
-  height: 112%;
-  object-fit: cover;
-}
-
 .detail-header {
   display: flex;
   flex: 0 0 auto;
@@ -188,14 +166,19 @@ p {
   fill: currentColor;
 }
 
+.detail-content {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .detail-main {
   --detail-vinyl-max: 720px;
   display: grid;
-  min-height: 0;
-  flex: 1 1 auto;
+  height: 100%;
   grid-template-columns: minmax(0, 400px) minmax(360px, 1fr) minmax(360px, 400px);
   gap: 10px;
-  overflow: hidden;
   padding: 24px 0;
   position: relative;
   z-index: 1;
@@ -403,7 +386,7 @@ p {
   position: relative;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  /* overflow: hidden; */
   perspective: 1400px;
   user-select: none;
 }
@@ -413,30 +396,50 @@ p {
   font-size: 16px;
 }
 
+.carousel-bg-wrap{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--card-width, 480px) * 4);
+  height: calc(var(--card-width, 480px) * 4);
+  transform: translate(-50%, -50%) scale(250%);
+  border-radius: 32px;
+  opacity: 0.45;
+}
+
 .carousel-bg {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--card-width, 480px) * 2);
-  height: calc(var(--card-width, 480px) * 2);
+  width: calc(var(--card-width, 480px) / 2);
+  height: calc(var(--card-width, 480px) / 2);
   transform: translate(-50%, -50%) scale(var(--carousel-scale, 1));
   border-radius: 32px;
-  overflow: hidden;
-  filter: blur(48px);
-  z-index: 0;
+  /* overflow: hidden; */
+  filter: blur(100px);
 }
 
 .carousel-bg__layer {
   position: absolute;
   inset: -6%;
   overflow: hidden;
-  transition: opacity 700ms linear;
+  transition: opacity 700ms ease;
 }
 
 .carousel-bg__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.carousel-preview .carousel-bg-wrap,
+.carousel-preview .carousel-bg-wrap * {
+  z-index: -5
+}
+
+.detail-screen .carousel-bg-wrap,
+.detail-screen .carousel-bg-wrap * {
+  z-index: 0;
 }
 
 .carousel-preview__stage {
@@ -1064,6 +1067,7 @@ p {
 .playground-card .sticker-strip {
   margin: -24px;
   width: calc(100% + 48px);
+  z-index:3
 }
 
 .playground-card .library-header {

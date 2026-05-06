@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { stickerAssets } from "../data/libraryMock.js";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
+import { CarouselBlurBackground } from "./CarouselBlurBackground.jsx";
 import { HeartIcon, MoreIcon } from "./Icons.jsx";
 import { StickerStrip } from "./StickerStrip.jsx";
 import { VinylDisc } from "./VinylDisc.jsx";
@@ -9,6 +10,7 @@ import { VinylDisc } from "./VinylDisc.jsx";
 const AUDIO_RATE_MIN = 0.08;
 const AUDIO_RAMP_UP_MS = 280;
 const AUDIO_RAMP_DOWN_MS = 360;
+const BASE_STAGE_HEIGHT = 640;
 
 const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 const easeInCubic = (t) => t ** 3;
@@ -40,11 +42,66 @@ function DetailSleeve({ album }) {
 export function DetailPrototype({ album, onBack }) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
   const [isPlaying, setIsPlaying] = useState(false);
+  const mainRef = useRef(null);
+  const detailMainRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioRampFrameRef = useRef(null);
   const stopFallbackTimerRef = useRef(null);
   const desiredPlayingRef = useRef(false);
   const commandIdRef = useRef(0);
+  const isManualSpinActiveRef = useRef(false);
+
+  function handleSpinRateChange(rate, metadata = {}) {
+    const audio = audioElementRef.current;
+    if (!audio) return;
+
+    const { source = "auto", phase = "update" } = metadata;
+    const isManual = source === "manual";
+    const safeRate = Math.max(0, Math.min(2.5, rate || 0));
+
+    if (isManual && phase === "start") {
+      isManualSpinActiveRef.current = true;
+      commandIdRef.current += 1;
+      if (stopFallbackTimerRef.current) {
+        clearTimeout(stopFallbackTimerRef.current);
+        stopFallbackTimerRef.current = null;
+      }
+      if (audioRampFrameRef.current) {
+        cancelAnimationFrame(audioRampFrameRef.current);
+        audioRampFrameRef.current = null;
+      }
+
+      setAudioPitchBehavior(audio);
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    }
+
+    if (isManual) {
+      const clampedManualRate = Math.max(AUDIO_RATE_MIN, safeRate);
+      audio.playbackRate = clampedManualRate;
+      audio.volume = Math.max(0, Math.min(1, safeRate / 1.2));
+
+      if (phase === "end") {
+        isManualSpinActiveRef.current = false;
+        if (!desiredPlayingRef.current) {
+          audio.pause();
+          audio.playbackRate = AUDIO_RATE_MIN;
+          audio.volume = 0;
+        }
+      }
+      return;
+    }
+
+    if (isManualSpinActiveRef.current) {
+      return;
+    }
+    if (audio.paused) return;
+
+    const clampedRate = Math.max(AUDIO_RATE_MIN, Math.min(2.5, safeRate || AUDIO_RATE_MIN));
+    audio.playbackRate = clampedRate;
+  }
 
   function setAudioPitchBehavior(audio) {
     audio.preservesPitch = false;
@@ -55,6 +112,7 @@ export function DetailPrototype({ album, onBack }) {
   function rampAudioPlayback(shouldPlay, commandId) {
     const audio = audioElementRef.current;
     if (!audio) return;
+    if (isManualSpinActiveRef.current) return;
 
     if (stopFallbackTimerRef.current) {
       clearTimeout(stopFallbackTimerRef.current);
@@ -132,6 +190,7 @@ export function DetailPrototype({ album, onBack }) {
     const audio = audioElementRef.current;
     if (!audio) return;
 
+    isManualSpinActiveRef.current = false;
     desiredPlayingRef.current = false;
     commandIdRef.current += 1;
     setIsPlaying(false);
@@ -157,6 +216,9 @@ export function DetailPrototype({ album, onBack }) {
 
     const shouldPlay = !desiredPlayingRef.current;
     desiredPlayingRef.current = shouldPlay;
+    if (isManualSpinActiveRef.current) {
+      isManualSpinActiveRef.current = false;
+    }
     commandIdRef.current += 1;
     const commandId = commandIdRef.current;
 
@@ -208,8 +270,39 @@ export function DetailPrototype({ album, onBack }) {
     setBgSrc(album.cover || FALLBACK_COVER);
   }, [album.cover]);
 
+  useLayoutEffect(() => {
+    const root = mainRef.current;
+    const target = detailMainRef.current;
+    if (!root || !target) return;
+
+    const updateScale = () => {
+      const h = target.getBoundingClientRect().height;
+      if (h === 0) return;
+      const scale = Math.max(0.4, Math.min(1.35, (h * 0.92) / BASE_STAGE_HEIGHT));
+      const sleeveScale = Math.max(0.55, Math.min(1.25, scale));
+      root.style.setProperty("--carousel-scale", scale);
+      root.style.setProperty("--sleeve-scale", sleeveScale);
+      root.style.setProperty("--card-width", `${Math.round(480 * sleeveScale)}px`);
+    };
+
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(target);
+    updateScale();
+
+    const raf1 = requestAnimationFrame(updateScale);
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(updateScale));
+
+    window.addEventListener("resize", updateScale);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", updateScale);
+    };
+  }, []);
+
   return (
-    <main className="detail-screen" aria-label={`${album.title} detail screen`}>
+    <main ref={mainRef} className="detail-screen" aria-label={`${album.title} detail screen`}>
       <audio
         ref={audioElementRef}
         src="/media/audio/20240125.mp3"
@@ -218,15 +311,6 @@ export function DetailPrototype({ album, onBack }) {
         aria-hidden="true"
         hidden
       />
-
-      <div className="detail-bg" aria-hidden="true">
-        <img
-          src={bgSrc}
-          className="detail-bg__img"
-          alt=""
-          onError={() => setBgSrc(FALLBACK_COVER)}
-        />
-      </div>
 
       <header className="detail-header">
         <button className="detail-header__back" type="button" onClick={onBack}>
@@ -248,7 +332,13 @@ export function DetailPrototype({ album, onBack }) {
         </div>
       </header>
 
-      <section className="detail-main" aria-label="Album detail">
+      <div className="detail-content">
+        <CarouselBlurBackground
+          layers={[{ src: bgSrc, active: true }]}
+          fallbackSrc={FALLBACK_COVER}
+        />
+
+        <section ref={detailMainRef} className="detail-main" aria-label="Album detail">
         <DetailSleeve album={album} />
         <div className="detail-vinyl-stage">
           <VinylDisc
@@ -256,6 +346,7 @@ export function DetailPrototype({ album, onBack }) {
             stickers={[]}
             size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
             isPlaying={isPlaying}
+            onSpinRateChange={handleSpinRateChange}
           />
         </div>
         <div className="detail-sidebar">
@@ -267,6 +358,7 @@ export function DetailPrototype({ album, onBack }) {
           />
         </div>
       </section>
+      </div>
 
       <StickerStrip stickers={stickerAssets} />
     </main>
