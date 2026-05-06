@@ -44,3 +44,30 @@ export function PlusIcon() {
     </svg>
   );
 }
+
+export function PreviousTrackIcon() {
+  return (
+    <svg className="icon icon--transport" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 5v14" />
+      <path d="m18 6-9 6 9 6V6Z" />
+    </svg>
+  );
+}
+
+export function NextTrackIcon() {
+  return (
+    <svg className="icon icon--transport" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 5v14" />
+      <path d="m6 6 9 6-9 6V6Z" />
+    </svg>
+  );
+}
+
+export function PauseIcon() {
+  return (
+    <svg className="icon icon--transport" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 6h3v12H8z" />
+      <path d="M13 6h3v12h-3z" />
+    </svg>
+  );
+}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { libraryAlbums, stickerAssets } from "../data/libraryMock.js";
+import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
 import { AlbumCard } from "./AlbumCard.jsx";
 import { LibraryCarousel } from "./LibraryCarousel.jsx";
 import { LibraryHeader } from "./LibraryHeader.jsx";
@@ -90,6 +91,13 @@ export function ComponentsPlayground() {
             <p className="playground-card__label">Vinyl disc</p>
             <div className="playground-card__vinyl">
               <VinylDisc isPlaying={vinylState === "playing"} />
+            </div>
+          </div>
+
+          <div className="playground-card">
+            <p className="playground-card__label">Album info + playback</p>
+            <div className="playground-card__details">
+              <AlbumInfoPlaybackPanel />
             </div>
           </div>
 

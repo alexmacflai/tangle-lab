@@ -27,6 +27,7 @@ Components:
 - Vinyl display with a fixed base/glare layer, spinning dust texture, spinning center art, and a spinning clipped sticker surface.
 - Metadata panel with album title, artist, year, and track list.
 - Playback controls for play/pause and visible progress.
+- Album info and playback panel can be reviewed as a standalone component before full detail page assembly.
 - Sticker tray with available stickers or current album stickers.
 
 Vinyl layer order:

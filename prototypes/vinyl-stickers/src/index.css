@@ -70,6 +70,14 @@ p {
   height: 28px;
 }
 
+.icon--transport {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 0;
+}
+
 .playground {
   min-height: 100vh;
   background: #0b0e12;
@@ -601,6 +609,163 @@ p {
   }
 }
 
+.album-info-panel {
+  display: flex;
+  width: 400px;
+  overflow: hidden;
+  flex-direction: column;
+  border-radius: 8px;
+  background: #1e252c;
+  color: #e6edf3;
+}
+
+.album-info-panel__info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px 24px 40px 40px;
+}
+
+.album-info-panel__heading {
+  display: flex;
+  min-height: 81px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.album-info-panel__heading h2 {
+  color: #e6edf3;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.album-info-panel__heading p {
+  color: #9b84ff;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.album-info-panel__metadata {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 12px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.album-info-panel__row {
+  display: contents;
+}
+
+.album-info-panel__metadata dt {
+  color: #6b7682;
+}
+
+.album-info-panel__metadata dd {
+  margin: 0;
+  color: #e6edf3;
+}
+
+.album-info-panel__playback {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  border-top: 1px solid #3f4852;
+  padding: 32px 24px 32px 40px;
+}
+
+.album-info-panel__controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.album-info-panel__transport,
+.album-info-panel__play {
+  display: grid;
+  width: 80px;
+  height: 80px;
+  place-items: center;
+  border: 0;
+  border-radius: 100px;
+  cursor: pointer;
+  padding: 10px;
+}
+
+.album-info-panel__transport {
+  background: transparent;
+  color: #6b7682;
+}
+
+.album-info-panel__transport:hover {
+  color: #a7b0ba;
+}
+
+.album-info-panel__play {
+  background: #e6edf3;
+  color: #0b0e12;
+}
+
+.album-info-panel__progress {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  color: #6b7682;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.album-info-panel__progress span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.album-info-panel__slider {
+  position: relative;
+  height: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.album-info-panel__track {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  left: 0;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #3f4852;
+}
+
+.album-info-panel__active-track {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--progress) * 100%);
+  border-radius: 24px;
+  background: #7c5cff;
+}
+
+.album-info-panel__thumb {
+  position: absolute;
+  top: 0;
+  left: calc(var(--progress) * 100%);
+  width: 12px;
+  height: 12px;
+  border-radius: 37px;
+  background: #ffffff;
+  transform: translateX(-50%);
+}
+
 .playground-panel {
   border-top: 1px solid #202a34;
   background: #10151a;
@@ -624,7 +789,7 @@ p {
   text-transform: uppercase;
 }
 
-.playground-panel h2 {
+.playground-panel__heading h2 {
   margin-top: 8px;
   color: #e6edf3;
   font-size: 34px;
@@ -695,6 +860,12 @@ p {
 }
 
 .playground-card__vinyl {
+  display: grid;
+  min-height: 548px;
+  place-items: center;
+}
+
+.playground-card__details {
   display: grid;
   min-height: 548px;
   place-items: center;
