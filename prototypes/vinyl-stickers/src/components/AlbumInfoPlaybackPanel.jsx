@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { NextTrackIcon, PauseIcon, PlayIcon, PreviousTrackIcon } from "./Icons.jsx";
 
 const defaultAlbum = {
@@ -28,12 +29,56 @@ export function AlbumInfoPlaybackPanel({
   album = defaultAlbum,
   isPlaying = false,
   onPlayPause,
+  onSeek,
   currentTime = "2:34",
   totalTime = "6:27",
   progress = 0.29,
   className = "",
 }) {
   const normalizedProgress = Math.max(0, Math.min(1, progress));
+  const sliderRef = useRef(null);
+
+  const progressFromPointerEvent = (event) => {
+    const slider = sliderRef.current;
+    if (!slider) return normalizedProgress;
+    const rect = slider.getBoundingClientRect();
+    if (rect.width <= 0) return normalizedProgress;
+    const relativeX = event.clientX - rect.left;
+    return Math.max(0, Math.min(1, relativeX / rect.width));
+  };
+
+  const handlePointerDown = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    slider.setPointerCapture(event.pointerId);
+    const nextProgress = progressFromPointerEvent(event);
+    if (typeof onSeek === "function") {
+      onSeek(nextProgress, { phase: "start" });
+      onSeek(nextProgress, { phase: "move" });
+    }
+  };
+
+  const handlePointerMove = (event) => {
+    const slider = sliderRef.current;
+    if (!slider || !slider.hasPointerCapture(event.pointerId)) return;
+    const nextProgress = progressFromPointerEvent(event);
+    if (typeof onSeek === "function") {
+      onSeek(nextProgress, { phase: "move" });
+    }
+  };
+
+  const handlePointerUp = (event) => {
+    const slider = sliderRef.current;
+    if (!slider || !slider.hasPointerCapture(event.pointerId)) return;
+    slider.releasePointerCapture(event.pointerId);
+    const nextProgress = progressFromPointerEvent(event);
+    if (typeof onSeek === "function") {
+      onSeek(nextProgress, { phase: "end" });
+    }
+  };
 
   return (
     <aside
@@ -76,7 +121,19 @@ export function AlbumInfoPlaybackPanel({
 
         <div className="album-info-panel__progress">
           <span>{currentTime}</span>
-          <div className="album-info-panel__slider" aria-hidden="true">
+          <div
+            ref={sliderRef}
+            className="album-info-panel__slider"
+            role="slider"
+            aria-label="Scrub playback"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(normalizedProgress * 100)}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
             <div className="album-info-panel__track">
               <div
                 className="album-info-panel__active-track"

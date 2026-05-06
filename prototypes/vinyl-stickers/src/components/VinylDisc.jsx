@@ -36,6 +36,9 @@ export function VinylDisc({
   stickers = placeholderStickers,
   size = 420,
   onSpinRateChange,
+  externalProgress,
+  externalProgressSource,
+  progressPerTurn = 0.18,
 }) {
   const [artSrc, setArtSrc] = useState(artImage || SHARED_VINYL_ART);
   const spinningLayersRef = useRef(null);
@@ -46,6 +49,7 @@ export function VinylDisc({
   const lastAngleRef = useRef(0);
   const lastTsRef = useRef(0);
   const manualRateRef = useRef(0);
+  const lastAppliedExternalProgressRef = useRef(null);
   isPlayingRef.current = isPlaying;
 
   const setPlaybackRate = (animation, rate) => {
@@ -56,9 +60,9 @@ export function VinylDisc({
     }
   };
 
-  const emitSpinRate = (rate, source, phase = "update") => {
+  const emitSpinRate = (rate, source, phase = "update", extras = {}) => {
     if (typeof onSpinRateChange === "function") {
-      onSpinRateChange(rate, { source, phase });
+      onSpinRateChange(rate, { source, phase, ...extras });
     }
   };
 
@@ -178,6 +182,21 @@ export function VinylDisc({
     runRateRamp(targetRate, isPlaying ? 280 : 360, isPlaying ? easeOutCubic : easeInCubic, "auto");
   }, [isPlaying]);
 
+  useEffect(() => {
+    const animation = spinAnimationRef.current;
+    if (!animation || isDraggingRef.current) return;
+    if (typeof externalProgress !== "number" || Number.isNaN(externalProgress)) return;
+    if (externalProgressSource !== "slider") return;
+    if (progressPerTurn <= 0) return;
+
+    const clamped = Math.max(0, Math.min(1, externalProgress));
+    if (lastAppliedExternalProgressRef.current === clamped) return;
+    lastAppliedExternalProgressRef.current = clamped;
+
+    const turns = clamped / progressPerTurn;
+    animation.currentTime = turns * SPIN_DURATION_MS;
+  }, [externalProgress, externalProgressSource, progressPerTurn]);
+
   const handlePointerDown = (event) => {
     if (event.button !== 0) return;
     const animation = spinAnimationRef.current;
@@ -220,7 +239,7 @@ export function VinylDisc({
     const currentTime = typeof animation.currentTime === "number" ? animation.currentTime : 0;
     animation.currentTime = currentTime + deltaTimeMs;
     setPlaybackRate(animation, smoothedRate);
-    emitSpinRate(smoothedRate, "manual", "move");
+    emitSpinRate(smoothedRate, "manual", "move", { deltaTimeMs, deltaAngle });
   };
 
   const endManualSpin = () => {

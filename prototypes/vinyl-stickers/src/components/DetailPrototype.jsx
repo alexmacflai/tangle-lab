@@ -11,9 +11,22 @@ const AUDIO_RATE_MIN = 0.08;
 const AUDIO_RAMP_UP_MS = 280;
 const AUDIO_RAMP_DOWN_MS = 360;
 const BASE_STAGE_HEIGHT = 640;
+const SPIN_DURATION_MS = 5450;
+const TRACK_DURATION_SECONDS = 6 * 60 + 27;
+const INITIAL_PROGRESS = 0;
+const PROGRESS_PER_FULL_TURN = 0.18;
 
 const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 const easeInCubic = (t) => t ** 3;
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+function formatTime(seconds) {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
 
 function BackIcon() {
   return (
@@ -42,6 +55,8 @@ function DetailSleeve({ album }) {
 export function DetailPrototype({ album, onBack }) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [visualProgress, setVisualProgress] = useState(INITIAL_PROGRESS);
+  const [trackDurationSeconds, setTrackDurationSeconds] = useState(TRACK_DURATION_SECONDS);
   const mainRef = useRef(null);
   const detailMainRef = useRef(null);
   const audioElementRef = useRef(null);
@@ -50,6 +65,12 @@ export function DetailPrototype({ album, onBack }) {
   const desiredPlayingRef = useRef(false);
   const commandIdRef = useRef(0);
   const isManualSpinActiveRef = useRef(false);
+  const visualProgressRef = useRef(INITIAL_PROGRESS);
+  const progressSourceRef = useRef("audio");
+
+  useEffect(() => {
+    visualProgressRef.current = visualProgress;
+  }, [visualProgress]);
 
   function handleSpinRateChange(rate, metadata = {}) {
     const audio = audioElementRef.current;
@@ -79,6 +100,19 @@ export function DetailPrototype({ album, onBack }) {
     }
 
     if (isManual) {
+      if (phase === "move" && typeof metadata.deltaTimeMs === "number") {
+        const deltaTurns = metadata.deltaTimeMs / SPIN_DURATION_MS;
+        const deltaProgress = deltaTurns * PROGRESS_PER_FULL_TURN;
+        const nextProgress = clamp01(visualProgressRef.current + deltaProgress);
+        progressSourceRef.current = "vinyl";
+        visualProgressRef.current = nextProgress;
+        setVisualProgress(nextProgress);
+
+        const duration =
+          Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : trackDurationSeconds;
+        audio.currentTime = nextProgress * duration;
+      }
+
       const clampedManualRate = Math.max(AUDIO_RATE_MIN, safeRate);
       audio.playbackRate = clampedManualRate;
       audio.volume = Math.max(0, Math.min(1, safeRate / 1.2));
@@ -169,7 +203,29 @@ export function DetailPrototype({ album, onBack }) {
     audio.volume = 0;
     setAudioPitchBehavior(audio);
 
+    const syncDuration = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setTrackDurationSeconds(audio.duration);
+      }
+    };
+
+    const syncProgress = () => {
+      const duration =
+        Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : TRACK_DURATION_SECONDS;
+      const nextProgress = clamp01((audio.currentTime || 0) / duration);
+      progressSourceRef.current = "audio";
+      visualProgressRef.current = nextProgress;
+      setVisualProgress(nextProgress);
+    };
+
+    audio.addEventListener("loadedmetadata", syncDuration);
+    audio.addEventListener("durationchange", syncDuration);
+    audio.addEventListener("timeupdate", syncProgress);
+
     return () => {
+      audio.removeEventListener("loadedmetadata", syncDuration);
+      audio.removeEventListener("durationchange", syncDuration);
+      audio.removeEventListener("timeupdate", syncProgress);
       commandIdRef.current += 1;
       if (stopFallbackTimerRef.current) {
         clearTimeout(stopFallbackTimerRef.current);
@@ -208,6 +264,8 @@ export function DetailPrototype({ album, onBack }) {
     audio.currentTime = 0;
     audio.playbackRate = AUDIO_RATE_MIN;
     audio.volume = 0;
+    visualProgressRef.current = INITIAL_PROGRESS;
+    setVisualProgress(INITIAL_PROGRESS);
   }, [album.id]);
 
   function handlePlayPause() {
@@ -264,6 +322,20 @@ export function DetailPrototype({ album, onBack }) {
         rampAudioPlayback(true, commandId);
       }
     }
+  }
+
+  function handleSliderSeek(nextProgress) {
+    const audio = audioElementRef.current;
+    if (!audio) return;
+
+    const clampedProgress = clamp01(nextProgress);
+    progressSourceRef.current = "slider";
+    visualProgressRef.current = clampedProgress;
+    setVisualProgress(clampedProgress);
+
+    const duration =
+      Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : TRACK_DURATION_SECONDS;
+    audio.currentTime = clampedProgress * duration;
   }
 
   useEffect(() => {
@@ -347,6 +419,9 @@ export function DetailPrototype({ album, onBack }) {
             size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
             isPlaying={isPlaying}
             onSpinRateChange={handleSpinRateChange}
+            externalProgress={visualProgress}
+            externalProgressSource={progressSourceRef.current}
+            progressPerTurn={PROGRESS_PER_FULL_TURN}
           />
         </div>
         <div className="detail-sidebar">
@@ -354,6 +429,10 @@ export function DetailPrototype({ album, onBack }) {
             album={album}
             isPlaying={isPlaying}
             onPlayPause={handlePlayPause}
+            onSeek={handleSliderSeek}
+            progress={visualProgress}
+            currentTime={formatTime(visualProgress * trackDurationSeconds)}
+            totalTime={formatTime(trackDurationSeconds)}
             className="album-info-panel--detail"
           />
         </div>

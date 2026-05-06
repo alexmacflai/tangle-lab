@@ -896,6 +896,8 @@ p {
 
 .album-info-panel--detail .album-info-panel__info {
   flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .album-info-panel--detail .album-info-panel__playback {
@@ -947,24 +949,32 @@ p {
 .album-info-panel__progress span {
   flex: 0 0 auto;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.album-info-panel__progress span:first-child {
+  width: 5ch;
+  text-align: right;
 }
 
 .album-info-panel__slider {
   position: relative;
-  height: 12px;
+  height: 16px;
   min-width: 0;
   flex: 1;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .album-info-panel__track {
   position: absolute;
-  top: 4px;
+  top: 5px;
   right: 0;
   left: 0;
-  height: 4px;
+  height: 6px;
   overflow: hidden;
   border-radius: 24px;
-  background: #3f4852;
+  background: #4b5561;
 }
 
 .album-info-panel__active-track {
@@ -979,7 +989,7 @@ p {
 
 .album-info-panel__thumb {
   position: absolute;
-  top: 0;
+  top: 2px;
   left: calc(var(--progress) * 100%);
   width: 12px;
   height: 12px;
