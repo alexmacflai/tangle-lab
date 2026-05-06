@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AlbumCard } from "./AlbumCard.jsx";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 
@@ -182,28 +182,37 @@ export function LibraryCarousel({ albums }) {
   );
 
   // Scale stage to fill available height
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
 
     const updateScale = () => {
-      const rect = el.getBoundingClientRect();
-      if (rect.height === 0 || rect.width === 0) return;
-
-      // Height keeps vertical fit, width keeps cards responsive horizontally.
-      const heightScale = (rect.height * 0.92) / BASE_STAGE_HEIGHT;
-      const widthScale = (rect.width * 0.8) / 480;
-      const scale = Math.max(0.4, Math.min(1.35, Math.min(heightScale, widthScale)));
+      const h = el.getBoundingClientRect().height;
+      if (h === 0) return false;
+      const scale = Math.max(0.4, Math.min(1.35, (h * 0.92) / BASE_STAGE_HEIGHT));
       const sleeveScale = Math.max(0.55, Math.min(1.25, scale));
       el.style.setProperty("--carousel-scale", scale);
       el.style.setProperty("--sleeve-scale", sleeveScale);
       el.style.setProperty("--card-width", `${Math.round(480 * sleeveScale)}px`);
+      return true;
     };
 
     const observer = new ResizeObserver(updateScale);
     observer.observe(el);
     updateScale();
-    return () => observer.disconnect();
+
+    // On hard refresh, first layout pass can still report 0 height.
+    // Re-check on next frames so variables never stay at fallback values.
+    const raf1 = requestAnimationFrame(updateScale);
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(updateScale));
+
+    window.addEventListener("resize", updateScale);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", updateScale);
+    };
   }, []);
 
   // Crossfade background image when focused album changes
@@ -254,14 +263,6 @@ export function LibraryCarousel({ albums }) {
     handleSlotClick(offset);
   }
 
-  if (!hasAlbums) {
-    return (
-      <section className="carousel-preview" aria-label="Library carousel">
-        <p className="carousel-preview__empty">No albums available yet.</p>
-      </section>
-    );
-  }
-
   return (
     <section
       ref={sectionRef}
@@ -270,52 +271,58 @@ export function LibraryCarousel({ albums }) {
       style={{ "--carousel-transition-duration": `${transitionDuration}ms` }}
       onTransitionEnd={() => setTransitionDuration(260)}
     >
-      <div className="carousel-bg" aria-hidden="true">
-        {bgLayers.map((layer, i) => (
-          <div
-            key={i}
-            className="carousel-bg__layer"
-            style={{ opacity: layer.active ? 1 : 0 }}
-          >
-            <img
-              src={layer.src}
-              className="carousel-bg__img"
-              alt=""
-              onError={(e) => { e.currentTarget.src = FALLBACK_COVER; }}
-            />
+      {hasAlbums ? (
+        <>
+          <div className="carousel-bg" aria-hidden="true">
+            {bgLayers.map((layer, i) => (
+              <div
+                key={i}
+                className="carousel-bg__layer"
+                style={{ opacity: layer.active ? 1 : 0 }}
+              >
+                <img
+                  src={layer.src}
+                  className="carousel-bg__img"
+                  alt=""
+                  onError={(e) => { e.currentTarget.src = FALLBACK_COVER; }}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="carousel-preview__stage">
-        {slots.map((slot) => (
-          <div
-            className="carousel-preview__slot"
-            key={slot.album.id}
-            role={Math.abs(slot.offset) <= CLICKABLE_RANGE ? "button" : undefined}
-            tabIndex={Math.abs(slot.offset) <= CLICKABLE_RANGE ? 0 : -1}
-            aria-hidden={Math.abs(slot.offset) > CLICKABLE_RANGE || undefined}
-            data-carousel-offset={slot.offset}
-            data-carousel-clickable={Math.abs(slot.offset) <= CLICKABLE_RANGE}
-            aria-label={
-              slot.offset === 0
-                ? `${slot.album.title} is focused`
-                : Math.abs(slot.offset) <= CLICKABLE_RANGE
-                  ? `Center ${slot.album.title}`
-                  : undefined
-            }
-            onClick={() => handleSlotClick(slot.offset)}
-            onKeyDown={(event) => handleSlotKeyDown(event, slot.offset)}
-            style={slotStyles[slot.offset]}
-          >
-            <AlbumCard
-              album={slot.album}
-              state={slot.offset === 0 ? "focused" : "resting"}
-              showStickers={slot.offset === 0 || slot.album.id === "schallaufnahmen"}
-              initialFavorite={slot.album.id === "vind"}
-            />
+          <div className="carousel-preview__stage">
+            {slots.map((slot) => (
+              <div
+                className="carousel-preview__slot"
+                key={slot.album.id}
+                role={Math.abs(slot.offset) <= CLICKABLE_RANGE ? "button" : undefined}
+                tabIndex={Math.abs(slot.offset) <= CLICKABLE_RANGE ? 0 : -1}
+                aria-hidden={Math.abs(slot.offset) > CLICKABLE_RANGE || undefined}
+                data-carousel-offset={slot.offset}
+                data-carousel-clickable={Math.abs(slot.offset) <= CLICKABLE_RANGE}
+                aria-label={
+                  slot.offset === 0
+                    ? `${slot.album.title} is focused`
+                    : Math.abs(slot.offset) <= CLICKABLE_RANGE
+                      ? `Center ${slot.album.title}`
+                      : undefined
+                }
+                onClick={() => handleSlotClick(slot.offset)}
+                onKeyDown={(event) => handleSlotKeyDown(event, slot.offset)}
+                style={slotStyles[slot.offset]}
+              >
+                <AlbumCard
+                  album={slot.album}
+                  state={slot.offset === 0 ? "focused" : "resting"}
+                  showStickers={slot.offset === 0 || slot.album.id === "schallaufnahmen"}
+                  initialFavorite={slot.album.id === "vind"}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      ) : (
+        <p className="carousel-preview__empty">No albums available yet.</p>
+      )}
     </section>
   );
 }
