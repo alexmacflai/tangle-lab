@@ -765,13 +765,7 @@ p {
 
 .vinyl-disc__spinning-layers {
   z-index: 2;
-  animation: vinyl-spin 5.45s linear infinite;
-  animation-play-state: paused;
   transform-origin: 50% 50%;
-}
-
-.vinyl-disc.is-playing .vinyl-disc__spinning-layers {
-  animation-play-state: running;
 }
 
 .vinyl-disc__dust {
@@ -818,12 +812,6 @@ p {
   object-fit: contain;
   filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45));
   transform: translate(-50%, -50%) rotate(var(--sticker-rotation));
-}
-
-@keyframes vinyl-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .album-info-panel {

@@ -71,3 +71,11 @@ export function PauseIcon() {
     </svg>
   );
 }
+
+export function PlayIcon() {
+  return (
+    <svg className="icon icon--transport" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 4.75v14.5L19 12 6 4.75Z" />
+    </svg>
+  );
+}

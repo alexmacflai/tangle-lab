@@ -1,4 +1,4 @@
-import { NextTrackIcon, PauseIcon, PreviousTrackIcon } from "./Icons.jsx";
+import { NextTrackIcon, PauseIcon, PlayIcon, PreviousTrackIcon } from "./Icons.jsx";
 
 const defaultAlbum = {
   title: "Vind",
@@ -26,6 +26,8 @@ const metadataRows = [
 
 export function AlbumInfoPlaybackPanel({
   album = defaultAlbum,
+  isPlaying = false,
+  onPlayPause,
   currentTime = "2:34",
   totalTime = "6:27",
   progress = 0.29,
@@ -59,8 +61,13 @@ export function AlbumInfoPlaybackPanel({
           <button className="album-info-panel__transport" type="button" aria-label="Previous track">
             <PreviousTrackIcon />
           </button>
-          <button className="album-info-panel__play" type="button" aria-label="Pause">
-            <PauseIcon />
+          <button
+            className="album-info-panel__play"
+            type="button"
+            aria-label={isPlaying ? "Pause" : "Play"}
+            onClick={onPlayPause}
+          >
+            {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
           <button className="album-info-panel__transport" type="button" aria-label="Next track">
             <NextTrackIcon />
