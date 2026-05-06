@@ -97,6 +97,122 @@ p {
   font-size: 14px;
 }
 
+.detail-screen {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0b0e12;
+  color: #e6edf3;
+}
+
+.detail-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 64px;
+}
+
+.detail-header__back,
+.detail-header__actions {
+  display: flex;
+  align-items: center;
+}
+
+.detail-header__back {
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  color: #6b7682;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 8px 0;
+}
+
+.detail-header__back:hover {
+  color: #a7b0ba;
+}
+
+.detail-header__back-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.detail-header__actions {
+  gap: 8px;
+}
+
+.detail-header__action {
+  display: grid;
+  width: 47px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7682;
+  cursor: pointer;
+}
+
+.detail-header__favorite.is-active {
+  color: #7c5cff;
+}
+
+.detail-header__action .icon {
+  fill: currentColor;
+}
+
+.detail-main {
+  --detail-vinyl-max: 720px;
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 400px) minmax(360px, 1fr) minmax(360px, 400px);
+  gap: 10px;
+  overflow: hidden;
+  padding: 24px 0;
+}
+
+.detail-sleeve-rail {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: visible;
+}
+
+.detail-sleeve {
+  height: min(100%, 660px);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
+}
+
+.detail-sleeve img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-vinyl-stage {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  filter: drop-shadow(0 22px 15px rgba(0, 0, 0, 0.95));
+}
+
+.detail-sidebar {
+  display: flex;
+  min-height: 0;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
 .library-header {
   display: flex;
   flex-shrink: 0;
@@ -747,6 +863,19 @@ p {
   align-items: center;
   border-top: 1px solid #3f4852;
   padding: 32px 24px 32px 40px;
+}
+
+.album-info-panel--detail {
+  height: 100%;
+  min-height: 0;
+}
+
+.album-info-panel--detail .album-info-panel__info {
+  flex: 1 1 auto;
+}
+
+.album-info-panel--detail .album-info-panel__playback {
+  flex: 0 0 auto;
 }
 
 .album-info-panel__controls {

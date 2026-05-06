@@ -42,7 +42,7 @@ export function VinylDisc({
     <div
       className={`vinyl-disc ${isPlaying ? "is-playing" : ""}`}
       aria-label={isPlaying ? "Vinyl spinning" : "Vinyl paused"}
-      style={{ "--vinyl-size": `${size}px` }}
+      style={{ "--vinyl-size": typeof size === "number" ? `${size}px` : size }}
     >
       <img className="vinyl-disc__layer vinyl-disc__base" src={baseImage} alt="" />
       <div className="vinyl-disc__spinning-layers">

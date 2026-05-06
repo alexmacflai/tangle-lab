@@ -146,7 +146,7 @@ function wrapIndex(index, length) {
   return ((index % length) + length) % length;
 }
 
-export function LibraryCarousel({ albums }) {
+export function LibraryCarousel({ albums, onOpenAlbum }) {
   const albumCount = albums.length;
   const hasAlbums = albumCount > 0;
   const isSingleAlbum = albumCount === 1;
@@ -159,6 +159,7 @@ export function LibraryCarousel({ albums }) {
     { src: FALLBACK_COVER, active: false },
   ]);
   const bgActiveRef = useRef(0);
+  const didSetInitialFocus = useRef(false);
 
   const slots = useMemo(
     () =>
@@ -180,6 +181,18 @@ export function LibraryCarousel({ albums }) {
     },
     [albumCount],
   );
+
+  useEffect(() => {
+    if (didSetInitialFocus.current || !hasAlbums) {
+      return;
+    }
+
+    const preferredIndex = albums.findIndex((album) => album.id === "ctm-vind");
+    if (preferredIndex >= 0) {
+      setFocusedIndex(preferredIndex);
+    }
+    didSetInitialFocus.current = true;
+  }, [albums, hasAlbums]);
 
   // Scale stage to fill available height
   useLayoutEffect(() => {
@@ -251,14 +264,19 @@ export function LibraryCarousel({ albums }) {
   }, [moveFocus]);
 
   function handleSlotClick(offset) {
-    if (offset === 0 || !hasAlbums || isSingleAlbum) return;
+    if (!hasAlbums) return;
+    if (offset === 0) {
+      onOpenAlbum?.(albums[focusedIndex]);
+      return;
+    }
+    if (isSingleAlbum) return;
     const abs = Math.abs(offset);
     const multiplier = abs === 1 ? 1 : abs === 2 ? 1.5 : 2;
     moveFocus(offset, Math.round(260 * multiplier));
   }
 
   function handleSlotKeyDown(event, offset) {
-    if (event.key !== " ") return;
+    if (event.key !== " " && event.key !== "Enter") return;
     event.preventDefault();
     handleSlotClick(offset);
   }

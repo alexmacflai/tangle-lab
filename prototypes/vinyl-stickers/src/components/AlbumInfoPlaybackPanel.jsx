@@ -29,11 +29,15 @@ export function AlbumInfoPlaybackPanel({
   currentTime = "2:34",
   totalTime = "6:27",
   progress = 0.29,
+  className = "",
 }) {
   const normalizedProgress = Math.max(0, Math.min(1, progress));
 
   return (
-    <aside className="album-info-panel" aria-label={`${album.title} playback details`}>
+    <aside
+      className={`album-info-panel ${className}`}
+      aria-label={`${album.title} playback details`}
+    >
       <div className="album-info-panel__info">
         <div className="album-info-panel__heading">
           <h2>{album.title}</h2>
