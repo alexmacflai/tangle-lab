@@ -31,8 +31,23 @@ function DetailSleeve({ album }) {
 }
 
 export function DetailPrototype({ album, onBack }) {
+  const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
+
+  useEffect(() => {
+    setBgSrc(album.cover || FALLBACK_COVER);
+  }, [album.cover]);
+
   return (
     <main className="detail-screen" aria-label={`${album.title} detail screen`}>
+      <div className="detail-bg" aria-hidden="true">
+        <img
+          src={bgSrc}
+          className="detail-bg__img"
+          alt=""
+          onError={() => setBgSrc(FALLBACK_COVER)}
+        />
+      </div>
+
       <header className="detail-header">
         <button className="detail-header__back" type="button" onClick={onBack}>
           <BackIcon />

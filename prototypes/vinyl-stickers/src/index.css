@@ -98,6 +98,7 @@ p {
 }
 
 .detail-screen {
+  position: relative;
   display: flex;
   height: 100vh;
   flex-direction: column;
@@ -106,12 +107,36 @@ p {
   color: #e6edf3;
 }
 
+.detail-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(90vw, 1320px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 32px;
+  overflow: hidden;
+  filter: blur(48px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.detail-bg__img {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  object-fit: cover;
+}
+
 .detail-header {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   padding: 16px 64px;
+  position: relative;
+  z-index: 1;
 }
 
 .detail-header__back,
@@ -172,6 +197,8 @@ p {
   gap: 10px;
   overflow: hidden;
   padding: 24px 0;
+  position: relative;
+  z-index: 1;
 }
 
 .detail-sleeve-rail {

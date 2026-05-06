@@ -153,6 +153,11 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
   const visibleOffsets = isSingleAlbum ? SINGLE_OFFSETS : VISIBLE_OFFSETS;
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(260);
+  const [layoutVars, setLayoutVars] = useState({
+    "--carousel-scale": 1,
+    "--sleeve-scale": 1,
+    "--card-width": "480px",
+  });
   const sectionRef = useRef(null);
   const [bgLayers, setBgLayers] = useState([
     { src: FALLBACK_COVER, active: true },
@@ -204,9 +209,18 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
       if (h === 0) return false;
       const scale = Math.max(0.4, Math.min(1.35, (h * 0.92) / BASE_STAGE_HEIGHT));
       const sleeveScale = Math.max(0.55, Math.min(1.25, scale));
-      el.style.setProperty("--carousel-scale", scale);
-      el.style.setProperty("--sleeve-scale", sleeveScale);
-      el.style.setProperty("--card-width", `${Math.round(480 * sleeveScale)}px`);
+      const nextVars = {
+        "--carousel-scale": scale,
+        "--sleeve-scale": sleeveScale,
+        "--card-width": `${Math.round(480 * sleeveScale)}px`,
+      };
+      setLayoutVars((prev) =>
+        prev["--carousel-scale"] === nextVars["--carousel-scale"]
+        && prev["--sleeve-scale"] === nextVars["--sleeve-scale"]
+        && prev["--card-width"] === nextVars["--card-width"]
+          ? prev
+          : nextVars,
+      );
       return true;
     };
 
@@ -286,7 +300,10 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
       ref={sectionRef}
       className="carousel-preview"
       aria-label="Library carousel"
-      style={{ "--carousel-transition-duration": `${transitionDuration}ms` }}
+      style={{
+        ...layoutVars,
+        "--carousel-transition-duration": `${transitionDuration}ms`,
+      }}
       onTransitionEnd={() => setTransitionDuration(260)}
     >
       {hasAlbums ? (
