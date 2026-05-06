@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FALLBACK_VINYL_ART } from "../data/useAlbums.js";
+import { FALLBACK_VINYL_ART, SHARED_VINYL_ART } from "../data/useAlbums.js";
 
 const placeholderStickers = [
   {
@@ -28,14 +28,14 @@ export function VinylDisc({
   isPlaying = false,
   baseImage = "/media/vinyl/base-black.png",
   dustImage = "/media/vinyl/dust.png",
-  artImage = FALLBACK_VINYL_ART,
+  artImage = SHARED_VINYL_ART,
   stickers = placeholderStickers,
   size = 420,
 }) {
-  const [artSrc, setArtSrc] = useState(artImage || FALLBACK_VINYL_ART);
+  const [artSrc, setArtSrc] = useState(artImage || SHARED_VINYL_ART);
 
   useEffect(() => {
-    setArtSrc(artImage || FALLBACK_VINYL_ART);
+    setArtSrc(artImage || SHARED_VINYL_ART);
   }, [artImage]);
 
   return (

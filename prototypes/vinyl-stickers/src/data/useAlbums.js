@@ -6,17 +6,7 @@ export const FALLBACK_COVER =
 export const FALLBACK_VINYL_ART =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 320'%3E%3Crect width='320' height='320' fill='%232b2623'/%3E%3Ccircle cx='160' cy='160' r='128' fill='%233f3832'/%3E%3Ccircle cx='160' cy='160' r='58' fill='%23554d45'/%3E%3Ccircle cx='160' cy='160' r='11' fill='%23f4efe7'/%3E%3C/svg%3E";
 
-const LOCAL_COVER_OVERRIDES = {
-  "ctm-vind": "/media/covers/vind.png",
-  "bloop-schallaufnahmen": "/media/covers/schallaufnahmen.png",
-  "two-lone-swordsmen-further-reminders": "/media/covers/further-reminders.png",
-  "flavien-berger-contre-temps": "/media/covers/contre-temps.png",
-  "elliott-smith-either-or": "/media/covers/either-or.png",
-};
-
-const LOCAL_VINYL_ART_OVERRIDES = {
-  "ctm-vind": "/media/vinyl/art-placeholder.png",
-};
+export const SHARED_VINYL_ART = "/media/vinyl-labels/bloop-schallaufnahmen-label.png";
 
 function formatDuration(durationSeconds) {
   if (typeof durationSeconds !== "number" || Number.isNaN(durationSeconds) || durationSeconds <= 0) {
@@ -45,7 +35,7 @@ function mapAlbum(rawAlbum, index) {
     id: rawAlbum.id ?? `album-${index + 1}`,
     title: rawAlbum.title ?? "Untitled Album",
     artist: rawAlbum.artist ?? "Unknown Artist",
-    cover: LOCAL_COVER_OVERRIDES[rawAlbum.id] || rawAlbum.sleeveImage || FALLBACK_COVER,
+    cover: rawAlbum.sleeveImage || FALLBACK_COVER,
     stickers: Array.isArray(rawAlbum.stickers) ? rawAlbum.stickers : [],
     year: rawAlbum.year ?? "Unknown",
     label: rawAlbum.label ?? "Unknown",
@@ -56,8 +46,7 @@ function mapAlbum(rawAlbum, index) {
     releaseNotes:
       rawAlbum.releaseContext ?? rawAlbum.comment ?? "No release notes available.",
     audioUrl: rawAlbum.audioUrl || null,
-    vinylArt:
-      LOCAL_VINYL_ART_OVERRIDES[rawAlbum.id] || rawAlbum.vinylLabelImage || FALLBACK_VINYL_ART,
+    vinylArt: SHARED_VINYL_ART,
   };
 }
 
