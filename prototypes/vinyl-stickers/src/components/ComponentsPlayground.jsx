@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { libraryAlbums, stickerAssets } from "../data/libraryMock.js";
 import { useAlbums } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
@@ -41,6 +41,13 @@ export function ComponentsPlayground() {
 
     return libraryAlbums.find((album) => album.id === "vind") ?? libraryAlbums[0];
   }, [albums]);
+
+  useEffect(() => {
+    document.body.classList.add("vinyl-components-screen");
+    return () => {
+      document.body.classList.remove("vinyl-components-screen");
+    };
+  }, []);
 
   return (
     <main className="playground">

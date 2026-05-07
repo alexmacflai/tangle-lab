@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AlbumCard } from "./AlbumCard.jsx";
-import { CarouselBlurBackground } from "./CarouselBlurBackground.jsx";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 
 const VISIBLE_OFFSETS = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
@@ -147,7 +146,12 @@ function wrapIndex(index, length) {
   return ((index % length) + length) % length;
 }
 
-export function LibraryCarousel({ albums, onOpenAlbum }) {
+export function LibraryCarousel({
+  albums,
+  onOpenAlbum,
+  onFocusedAlbumChange,
+  isExtracting = false,
+}) {
   const albumCount = albums.length;
   const hasAlbums = albumCount > 0;
   const isSingleAlbum = albumCount === 1;
@@ -155,11 +159,6 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [transitionDuration, setTransitionDuration] = useState(260);
   const sectionRef = useRef(null);
-  const [bgLayers, setBgLayers] = useState([
-    { src: FALLBACK_COVER, active: true },
-    { src: FALLBACK_COVER, active: false },
-  ]);
-  const bgActiveRef = useRef(0);
   const didSetInitialFocus = useRef(false);
 
   const slots = useMemo(
@@ -229,20 +228,10 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
     };
   }, []);
 
-  // Crossfade background image when focused album changes
   useEffect(() => {
     if (!hasAlbums) return;
-    const newSrc = albums[focusedIndex]?.cover || FALLBACK_COVER;
-    const active = bgActiveRef.current;
-    const inactive = 1 - active;
-    bgActiveRef.current = inactive;
-    setBgLayers((prev) => {
-      const next = [...prev];
-      next[inactive] = { src: newSrc, active: true };
-      next[active] = { ...prev[active], active: false };
-      return next;
-    });
-  }, [focusedIndex, albums, hasAlbums]);
+    onFocusedAlbumChange?.(albums[focusedIndex]?.id ?? null);
+  }, [albums, focusedIndex, hasAlbums, onFocusedAlbumChange]);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -264,10 +253,22 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [moveFocus]);
 
-  function handleSlotClick(offset) {
+  function handleSlotClick(offset, event) {
     if (!hasAlbums) return;
     if (offset === 0) {
-      onOpenAlbum?.(albums[focusedIndex]);
+      const slotEl = event?.currentTarget;
+      const sleeveEl = slotEl?.querySelector(".album-card__cover-wrap");
+      const sourceRect = sleeveEl?.getBoundingClientRect?.();
+      onOpenAlbum?.(albums[focusedIndex], {
+        sourceRect: sourceRect
+          ? {
+              left: sourceRect.left,
+              top: sourceRect.top,
+              width: sourceRect.width,
+              height: sourceRect.height,
+            }
+          : null,
+      });
       return;
     }
     if (isSingleAlbum) return;
@@ -285,14 +286,13 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
   return (
     <section
       ref={sectionRef}
-      className="carousel-preview"
+      className={`carousel-preview ${isExtracting ? "is-extracting" : ""}`}
       aria-label="Library carousel"
       style={{ "--carousel-transition-duration": `${transitionDuration}ms` }}
       onTransitionEnd={() => setTransitionDuration(260)}
     >
       {hasAlbums ? (
         <>
-          <CarouselBlurBackground layers={bgLayers} fallbackSrc={FALLBACK_COVER} />
           <div className="carousel-preview__stage">
             {slots.map((slot) => (
               <div
@@ -310,7 +310,7 @@ export function LibraryCarousel({ albums, onOpenAlbum }) {
                       ? `Center ${slot.album.title}`
                       : undefined
                 }
-                onClick={() => handleSlotClick(slot.offset)}
+                onClick={(event) => handleSlotClick(slot.offset, event)}
                 onKeyDown={(event) => handleSlotKeyDown(event, slot.offset)}
                 style={slotStyles[slot.offset]}
               >

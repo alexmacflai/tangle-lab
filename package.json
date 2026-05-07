@@ -4,10 +4,11 @@
   "version": "0.1.0",
   "description": "Root workspace metadata for the tangle-lab repository.",
   "scripts": {
-    "dev:tangle-explore": "npm run dev --workspace tangle-explore",
+    "dev": "npm run dev:tangle-explore",
+    "dev:tangle-explore": "npm run dev --workspace tangle-explore -- --port 5173 --strictPort",
     "build:tangle-explore": "npm run build --workspace tangle-explore",
     "prepare:tangle-explore:data": "npm run prepare:data --workspace tangle-explore",
-    "dev:vinyl-stickers": "npm run dev --workspace vinyl-stickers",
+    "dev:vinyl-stickers": "npm run dev --workspace vinyl-stickers -- --port 5174 --strictPort",
     "build:vinyl-stickers": "npm run build --workspace vinyl-stickers"
   },
   "workspaces": [

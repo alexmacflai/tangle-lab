@@ -111,9 +111,17 @@
 }
 
 .indexCardLabel {
+  display: block;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.03em;
+}
+
+.indexCardDescription {
+  margin: 10px 0 0;
+  color: var(--neutral-200);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .indexCardMeta {

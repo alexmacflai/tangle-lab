@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FALLBACK_VINYL_ART, SHARED_VINYL_ART } from "../data/useAlbums.js";
+import { vinylAssetPath } from "../data/assetPaths.js";
 
 const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 const easeInCubic = (t) => t ** 3;
@@ -8,7 +9,7 @@ const SPIN_DURATION_MS = 5450;
 const placeholderStickers = [
   {
     id: "vinyl-star",
-    src: "/media/stickers/star.png",
+    src: vinylAssetPath("/media/stickers/star.png"),
     label: "Star sticker",
     x: 69,
     y: 28,
@@ -18,7 +19,7 @@ const placeholderStickers = [
   },
   {
     id: "vinyl-lightning",
-    src: "/media/stickers/lightning.png",
+    src: vinylAssetPath("/media/stickers/lightning.png"),
     label: "Lightning sticker",
     x: 31,
     y: 68,
@@ -30,8 +31,8 @@ const placeholderStickers = [
 
 export function VinylDisc({
   isPlaying = false,
-  baseImage = "/media/vinyl/base-black.png",
-  dustImage = "/media/vinyl/dust.png",
+  baseImage = vinylAssetPath("/media/vinyl/base-black.png"),
+  dustImage = vinylAssetPath("/media/vinyl/dust.png"),
   artImage = SHARED_VINYL_ART,
   stickers = placeholderStickers,
   size = 420,
@@ -40,6 +41,7 @@ export function VinylDisc({
   externalProgressSource,
   progressPerTurn = 0.18,
 }) {
+  const vinylSize = typeof size === "number" ? `${size}px` : size;
   const [artSrc, setArtSrc] = useState(artImage || SHARED_VINYL_ART);
   const spinningLayersRef = useRef(null);
   const rampFrameRef = useRef(null);
@@ -260,7 +262,11 @@ export function VinylDisc({
     <div
       className={`vinyl-disc ${isPlaying ? "is-playing" : ""}`}
       aria-label={isPlaying ? "Vinyl spinning" : "Vinyl paused"}
-      style={{ "--vinyl-size": typeof size === "number" ? `${size}px` : size }}
+      style={{
+        "--vinyl-size": vinylSize,
+        width: vinylSize,
+        height: vinylSize,
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={endManualSpin}

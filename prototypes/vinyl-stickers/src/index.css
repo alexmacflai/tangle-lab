@@ -12,10 +12,16 @@
 }
 
 body {
-  min-width: 1100px;
+  min-width: 0;
   margin: 0;
   background: #0b0e12;
   color: #e6edf3;
+  overflow: hidden;
+}
+
+body.vinyl-components-screen {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 button,
@@ -82,37 +88,158 @@ p {
   background: #0b0e12;
 }
 
-.library-preview {
-  display: flex;
-  height: 100vh;
-  flex-direction: column;
-  overflow: hidden;
-  background: #0b0e12;
-}
+/* ── Unified app shell ─────────────────────────────────────── */
 
-.library-preview__status {
-  margin: 0;
-  padding: 0 64px 8px;
-  color: #a7b0ba;
-  font-size: 14px;
-}
-
-.detail-screen {
+.app {
   position: relative;
   display: flex;
-  height: 100vh;
   flex-direction: column;
+  height: 100vh;
   overflow: hidden;
   background: #0b0e12;
   color: #e6edf3;
 }
 
-.detail-header {
-  display: flex;
+/* Header — contains two faces that cross-fade and change height */
+.app-header {
   flex: 0 0 auto;
+  height: 144px;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  transition: height 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-view="detail"] .app-header {
+  height: 72px;
+}
+
+.app-header__face {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-header__face-inner {
+  height: 100%;
+}
+
+/* Library face: full header with title + controls */
+.app-header__face--library .app-header__face-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 40px 64px;
+}
+
+/* Detail face: compact back + actions row */
+.app-header__face--detail .app-header__face-inner {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 64px;
+}
+
+[data-view="library"] .app-header__face--library,
+[data-view="detail"] .app-header__face--detail {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Body — expands to fill remaining height */
+.app-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.app > .carousel-bg-wrap,
+.app > .carousel-bg-wrap * {
+  z-index: 0;
+}
+
+/* Both panels always mounted, stacked, CSS controls visibility */
+.app-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-panel--library {
+  z-index: 1;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.app-panel--detail {
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-view="detail"] .app-panel--library {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-view="detail"] .app-panel--detail {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Footer — never changes */
+.app-footer {
+  flex: 0 0 auto;
+}
+
+/* Persistent sleeve hero — one element that moves between carousel and detail positions */
+.app-sleeve-hero {
+  position: fixed;
+  z-index: 20;
+  overflow: hidden;
+  border-radius: 8px;
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+  pointer-events: none;
+  will-change: left, top, width, height;
+}
+
+.app-sleeve-hero--animated {
+  transition:
+    left 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    top 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-sleeve-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The real detail sleeve placeholder is invisible — it provides layout; hero is the visible one */
+.detail-sleeve {
+  visibility: hidden;
+}
+
+/* ── Detail content ─────────────────────────────────────────── */
+
+.detail-content {
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   position: relative;
   z-index: 1;
 }
@@ -136,6 +263,7 @@ p {
 .detail-header__back:hover {
   color: #a7b0ba;
 }
+
 
 .detail-header__back-icon {
   width: 18px;
@@ -164,13 +292,6 @@ p {
 
 .detail-header__action .icon {
   fill: currentColor;
-}
-
-.detail-content {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .detail-main {
@@ -210,10 +331,21 @@ p {
 
 .detail-vinyl-stage {
   display: grid;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   place-items: center;
   filter: drop-shadow(0 22px 15px rgba(0, 0, 0, 0.95));
+}
+
+.detail-vinyl-motion {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
 }
 
 .detail-sidebar {
@@ -224,13 +356,13 @@ p {
   overflow: hidden;
 }
 
+
 .library-header {
   display: flex;
   flex-shrink: 0;
   width: 100%;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 40px 64px;
 }
 
 .library-header__title {
@@ -396,13 +528,18 @@ p {
   font-size: 16px;
 }
 
+.carousel-preview.is-extracting .carousel-preview__slot:not([data-carousel-offset="0"]) {
+  opacity: 0 !important;
+  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .carousel-bg-wrap{
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--card-width, 480px) * 4);
-  height: calc(var(--card-width, 480px) * 4);
-  transform: translate(-50%, -50%) scale(250%);
+  width: 220vh;
+  height: 220vh;
+  transform: translate(-50%, -50%);
   border-radius: 32px;
   opacity: 0.45;
 }
@@ -411,9 +548,9 @@ p {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--card-width, 480px) / 2);
-  height: calc(var(--card-width, 480px) / 2);
-  transform: translate(-50%, -50%) scale(var(--carousel-scale, 1));
+  width: 24vh;
+  height: 24vh;
+  transform: translate(-50%, -50%);
   border-radius: 32px;
   /* overflow: hidden; */
   filter: blur(100px);
@@ -435,11 +572,6 @@ p {
 .carousel-preview .carousel-bg-wrap,
 .carousel-preview .carousel-bg-wrap * {
   z-index: -5
-}
-
-.detail-screen .carousel-bg-wrap,
-.detail-screen .carousel-bg-wrap * {
-  z-index: 0;
 }
 
 .carousel-preview__stage {

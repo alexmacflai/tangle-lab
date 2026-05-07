@@ -1,10 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { stickerAssets } from "../data/libraryMock.js";
+import { vinylAssetPath } from "../data/assetPaths.js";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
-import { CarouselBlurBackground } from "./CarouselBlurBackground.jsx";
-import { HeartIcon, MoreIcon } from "./Icons.jsx";
-import { StickerStrip } from "./StickerStrip.jsx";
 import { VinylDisc } from "./VinylDisc.jsx";
 
 const AUDIO_RATE_MIN = 0.08;
@@ -28,15 +25,7 @@ function formatTime(seconds) {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-function BackIcon() {
-  return (
-    <svg className="icon detail-header__back-icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-
-function DetailSleeve({ album }) {
+function DetailSleeve({ album, sleeveTargetRef }) {
   const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
 
   useEffect(() => {
@@ -45,20 +34,26 @@ function DetailSleeve({ album }) {
 
   return (
     <div className="detail-sleeve-rail" aria-hidden="true">
-      <div className="detail-sleeve">
+      <div ref={sleeveTargetRef} className="detail-sleeve">
         <img src={coverSrc} alt="" onError={() => setCoverSrc(FALLBACK_COVER)} />
       </div>
     </div>
   );
 }
 
-export function DetailPrototype({ album, onBack }) {
+export function DetailContent({
+  album,
+  onSleeveReady,
+  measureKey,
+}) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
   const [isPlaying, setIsPlaying] = useState(false);
   const [visualProgress, setVisualProgress] = useState(INITIAL_PROGRESS);
   const [trackDurationSeconds, setTrackDurationSeconds] = useState(TRACK_DURATION_SECONDS);
   const mainRef = useRef(null);
   const detailMainRef = useRef(null);
+  const sleeveRef = useRef(null);
+  const vinylMotionRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioRampFrameRef = useRef(null);
   const stopFallbackTimerRef = useRef(null);
@@ -373,56 +368,39 @@ export function DetailPrototype({ album, onBack }) {
     };
   }, []);
 
+  useLayoutEffect(() => {
+    if (!measureKey || typeof onSleeveReady !== "function") return;
+    const sleeveEl = sleeveRef.current;
+    if (!sleeveEl) return;
+    const rect = sleeveEl.getBoundingClientRect();
+    onSleeveReady({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+  }, [measureKey, onSleeveReady]);
+
   return (
-    <main ref={mainRef} className="detail-screen" aria-label={`${album.title} detail screen`}>
+    <div ref={mainRef} className="detail-content" aria-label={`${album.title} detail`}>
       <audio
         ref={audioElementRef}
-        src="/media/audio/20240125.mp3"
+        src={vinylAssetPath("/media/audio/20240125.mp3")}
         preload="auto"
         loop
         aria-hidden="true"
         hidden
       />
-
-      <header className="detail-header">
-        <button className="detail-header__back" type="button" onClick={onBack}>
-          <BackIcon />
-          <span>My collection</span>
-        </button>
-        <div className="detail-header__actions">
-          <button
-            className="detail-header__action detail-header__favorite is-active"
-            type="button"
-            aria-label="Favorite album"
-            aria-pressed="true"
-          >
-            <HeartIcon filled />
-          </button>
-          <button className="detail-header__action" type="button" aria-label="More options">
-            <MoreIcon />
-          </button>
-        </div>
-      </header>
-
-      <div className="detail-content">
-        <CarouselBlurBackground
-          layers={[{ src: bgSrc, active: true }]}
-          fallbackSrc={FALLBACK_COVER}
-        />
-
-        <section ref={detailMainRef} className="detail-main" aria-label="Album detail">
-        <DetailSleeve album={album} />
-        <div className="detail-vinyl-stage">
-          <VinylDisc
-            artImage={album.vinylArt}
-            stickers={[]}
-            size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
-            isPlaying={isPlaying}
-            onSpinRateChange={handleSpinRateChange}
-            externalProgress={visualProgress}
-            externalProgressSource={progressSourceRef.current}
-            progressPerTurn={PROGRESS_PER_FULL_TURN}
-          />
+      <section ref={detailMainRef} className="detail-main" aria-label="Album detail">
+        <DetailSleeve album={album} sleeveTargetRef={sleeveRef} />
+        <div ref={vinylMotionRef} className="detail-vinyl-motion">
+          <div className="detail-vinyl-stage">
+            <VinylDisc
+              artImage={album.vinylArt}
+              stickers={[]}
+              size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
+              isPlaying={isPlaying}
+              onSpinRateChange={handleSpinRateChange}
+              externalProgress={visualProgress}
+              externalProgressSource={progressSourceRef.current}
+              progressPerTurn={PROGRESS_PER_FULL_TURN}
+            />
+          </div>
         </div>
         <div className="detail-sidebar">
           <AlbumInfoPlaybackPanel
@@ -437,9 +415,6 @@ export function DetailPrototype({ album, onBack }) {
           />
         </div>
       </section>
-      </div>
-
-      <StickerStrip stickers={stickerAssets} />
-    </main>
+    </div>
   );
 }

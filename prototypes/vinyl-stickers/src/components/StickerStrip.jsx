@@ -1,5 +1,6 @@
 import { PlusIcon } from "./Icons.jsx";
 import { StickerItem } from "./StickerItem.jsx";
+import { vinylAssetPath } from "../data/assetPaths.js";
 
 export function StickerStrip({ stickers }) {
   return (
@@ -9,7 +10,7 @@ export function StickerStrip({ stickers }) {
           <p className="sticker-strip__eyebrow">Stickers</p>
           <p className="sticker-strip__copy">Drag and drop to stick to jackets or vinyls</p>
         </div>
-        <img className="sticker-strip__arrow" src="/media/stickers/drag-arrow.svg" alt="" />
+        <img className="sticker-strip__arrow" src={vinylAssetPath("/media/stickers/drag-arrow.svg")} alt="" />
       </div>
       <div className="sticker-strip__items">
         {stickers.map((sticker) => (
