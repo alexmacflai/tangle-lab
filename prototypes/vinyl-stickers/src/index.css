@@ -110,7 +110,8 @@ p {
   transition: height 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-view="detail"] .app-header {
+[data-scene="opening"] .app-header,
+[data-scene="detail"] .app-header {
   height: 72px;
 }
 
@@ -142,8 +143,10 @@ p {
   padding: 16px 64px;
 }
 
-[data-view="library"] .app-header__face--library,
-[data-view="detail"] .app-header__face--detail {
+[data-scene="library"] .app-header__face--library,
+[data-scene="closing"] .app-header__face--library,
+[data-scene="opening"] .app-header__face--detail,
+[data-scene="detail"] .app-header__face--detail {
   opacity: 1;
   pointer-events: auto;
 }
@@ -167,7 +170,7 @@ p {
   inset: 0;
   display: flex;
   flex-direction: column;
-  transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .app-panel--library {
@@ -182,19 +185,28 @@ p {
   pointer-events: none;
 }
 
-[data-view="detail"] .app-panel--library {
+[data-scene="detail"] .app-panel--library {
   opacity: 0;
   pointer-events: none;
 }
 
-[data-view="detail"] .app-panel--detail {
-  opacity: 1;
-  pointer-events: auto;
+[data-scene="opening"] .app-panel--library {
+  opacity: 0;
+  pointer-events: none;
 }
 
-[data-transition-phase="opening"] .app-panel--detail,
-[data-transition-phase="closing"] .app-panel--detail {
+[data-scene="opening"] .app-panel--detail,
+[data-scene="detail"] .app-panel--detail {
   opacity: 1;
+}
+
+[data-scene="closing"] .app-panel--detail {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-scene="detail"] .app-panel--detail {
+  pointer-events: auto;
 }
 
 /* Footer — never changes */
@@ -202,19 +214,34 @@ p {
   flex: 0 0 auto;
 }
 
-/* Persistent sleeve hero — one element that moves between carousel and detail positions */
-.app-sleeve-hero {
-  position: fixed;
+/* Transition overlay — shared sleeve/vinyl carrier during open/close */
+.transition-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
   z-index: 20;
+}
+
+.transition-overlay__sleeve,
+.transition-overlay__vinyl {
+  position: fixed;
+  will-change: left, top, width, height;
+}
+
+.transition-overlay__sleeve {
+  z-index: 2;
   overflow: hidden;
   border-radius: 8px;
   outline: 2px solid #fff;
   outline-offset: -2px;
-  pointer-events: none;
-  will-change: left, top, width, height;
 }
 
-.app-sleeve-hero--animated {
+.transition-overlay__vinyl {
+  z-index: 1;
+}
+
+.transition-overlay--animated .transition-overlay__sleeve,
+.transition-overlay--animated .transition-overlay__vinyl {
   transition:
     left 520ms cubic-bezier(0.16, 1, 0.3, 1),
     top 520ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -222,15 +249,20 @@ p {
     height 520ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.app-sleeve-hero img {
+.transition-overlay__sleeve img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* The real detail sleeve placeholder is invisible — it provides layout; hero is the visible one */
+.transition-overlay__vinyl .vinyl-disc {
+  width: 100%;
+  height: 100%;
+}
+
+/* The real detail sleeve placeholder is invisible — it provides layout for the overlay target */
 .detail-sleeve {
-  visibility: hidden;
+  visibility: visible;
 }
 
 /* ── Detail content ─────────────────────────────────────────── */
@@ -241,57 +273,44 @@ p {
   overflow: hidden;
 }
 
-.detail-vinyl-motion {
-  transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.detail-sidebar,
-.detail-header__actions,
-.detail-header__back {
+.detail-sidebar {
+  opacity: 0;
+  transform: translateX(20px);
   transition:
     opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[data-transition-phase="opening"] .detail-vinyl-motion {
-  transform: translateY(18px) scale(0.76);
+[data-scene="opening"] .detail-sidebar {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 220ms;
 }
 
-[data-transition-phase="detail"] .detail-vinyl-motion {
-  transform: translateY(0) scale(1);
-}
-
-[data-transition-phase="closing"] .detail-vinyl-motion {
-  transform: translateY(10px) scale(0.82);
-}
-
-[data-transition-phase="opening"] .detail-sidebar,
-[data-transition-phase="opening"] .detail-header__actions,
-[data-transition-phase="opening"] .detail-header__back {
-  opacity: 0;
-  transform: translateX(18px);
-  transition-delay: 180ms;
-}
-
-[data-transition-phase="detail"] .detail-sidebar,
-[data-transition-phase="detail"] .detail-header__actions,
-[data-transition-phase="detail"] .detail-header__back {
+[data-scene="detail"] .detail-sidebar {
   opacity: 1;
   transform: translateX(0);
   transition-delay: 0ms;
 }
 
-[data-transition-phase="closing"] .detail-sidebar,
-[data-transition-phase="closing"] .detail-header__actions,
-[data-transition-phase="closing"] .detail-header__back {
+[data-scene="closing"] .detail-sidebar {
   opacity: 0;
   transform: translateX(16px);
   transition-delay: 0ms;
 }
 
-[data-transition-phase="opening"] .app-panel--library .carousel-preview__slot[data-carousel-offset="0"] .album-card__cover-wrap,
-[data-transition-phase="closing"] .app-panel--library .carousel-preview__slot[data-carousel-offset="0"] .album-card__cover-wrap {
+[data-scene="opening"] .detail-sleeve,
+[data-scene="opening"] .detail-vinyl-motion,
+[data-scene="closing"] .detail-sleeve,
+[data-scene="closing"] .detail-vinyl-motion {
+  visibility: hidden;
+}
+
+[data-scene="opening"] .app-panel--library .carousel-preview__slot[data-carousel-offset="0"] .album-card__cover-wrap,
+[data-scene="closing"] .app-panel--library .carousel-preview__slot[data-carousel-offset="0"] .album-card__cover-wrap {
   opacity: 0;
+  pointer-events: none;
+  transition: none;
 }
 
 .detail-header {

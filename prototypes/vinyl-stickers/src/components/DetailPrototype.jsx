@@ -43,8 +43,7 @@ function DetailSleeve({ album, sleeveTargetRef }) {
 
 export function DetailContent({
   album,
-  onSleeveReady,
-  measureKey,
+  onLayoutChange,
 }) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,6 +53,7 @@ export function DetailContent({
   const detailMainRef = useRef(null);
   const sleeveRef = useRef(null);
   const vinylMotionRef = useRef(null);
+  const vinylStageRef = useRef(null);
   const audioElementRef = useRef(null);
   const audioRampFrameRef = useRef(null);
   const stopFallbackTimerRef = useRef(null);
@@ -369,12 +369,53 @@ export function DetailContent({
   }, []);
 
   useLayoutEffect(() => {
-    if (!measureKey || typeof onSleeveReady !== "function") return;
+    if (typeof onLayoutChange !== "function") return;
+
+    const root = detailMainRef.current;
     const sleeveEl = sleeveRef.current;
-    if (!sleeveEl) return;
-    const rect = sleeveEl.getBoundingClientRect();
-    onSleeveReady({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
-  }, [measureKey, onSleeveReady]);
+    const vinylRoot = vinylStageRef.current;
+    if (!root || !sleeveEl || !vinylRoot) return;
+
+    const report = () => {
+      const sleeveRect = sleeveEl.getBoundingClientRect();
+      const vinylEl = vinylRoot.querySelector(".vinyl-disc");
+      const vinylRect = vinylEl?.getBoundingClientRect?.();
+      if (!vinylRect) return;
+
+      onLayoutChange({
+        albumId: album.id,
+        sleeveRect: {
+          left: sleeveRect.left,
+          top: sleeveRect.top,
+          width: sleeveRect.width,
+          height: sleeveRect.height,
+        },
+        vinylRect: {
+          left: vinylRect.left,
+          top: vinylRect.top,
+          width: vinylRect.width,
+          height: vinylRect.height,
+        },
+      });
+    };
+
+    const observer = new ResizeObserver(report);
+    observer.observe(root);
+    observer.observe(sleeveEl);
+    observer.observe(vinylRoot);
+    report();
+
+    const raf1 = requestAnimationFrame(report);
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(report));
+    window.addEventListener("resize", report);
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", report);
+    };
+  }, [album.id, onLayoutChange]);
 
   return (
     <div ref={mainRef} className="detail-content" aria-label={`${album.title} detail`}>
@@ -389,7 +430,7 @@ export function DetailContent({
       <section ref={detailMainRef} className="detail-main" aria-label="Album detail">
         <DetailSleeve album={album} sleeveTargetRef={sleeveRef} />
         <div ref={vinylMotionRef} className="detail-vinyl-motion">
-          <div className="detail-vinyl-stage">
+          <div ref={vinylStageRef} className="detail-vinyl-stage">
             <VinylDisc
               artImage={album.vinylArt}
               stickers={[]}

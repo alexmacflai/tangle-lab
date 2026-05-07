@@ -150,6 +150,7 @@ export function LibraryCarousel({
   albums,
   onOpenAlbum,
   onFocusedAlbumChange,
+  isActive = true,
   onFocusedSlotLayout,
   onToggleFavorite,
   isExtracting = false,
@@ -271,6 +272,10 @@ export function LibraryCarousel({
   }, [albums, focusedIndex, hasAlbums, onFocusedSlotLayout]);
 
   useEffect(() => {
+    if (!isActive) {
+      return undefined;
+    }
+
     function onKeyDown(event) {
       const tag = event.target.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
@@ -288,9 +293,10 @@ export function LibraryCarousel({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [moveFocus]);
+  }, [isActive, moveFocus]);
 
   function handleSlotClick(offset, event) {
+    if (!isActive) return;
     if (!hasAlbums) return;
     if (offset === 0) {
       const slotEl = event?.currentTarget;

@@ -7,16 +7,11 @@ import { HeartIcon, MoreIcon } from "./components/Icons.jsx";
 import { LibraryCarousel } from "./components/LibraryCarousel.jsx";
 import { LibraryHeader } from "./components/LibraryHeader.jsx";
 import { StickerStrip } from "./components/StickerStrip.jsx";
+import { VinylDisc } from "./components/VinylDisc.jsx";
 import { stickerAssets } from "./data/libraryMock.js";
 import { FALLBACK_COVER, useAlbums } from "./data/useAlbums.js";
 
-const SLEEVE_TRANSITION_MS = 520;
-const DETAIL_CONTENT_DELAY_MS = 160;
-const DETAIL_CONTENT_DURATION_MS = 360;
-const TRANSITION_SETTLE_MS = Math.max(
-  SLEEVE_TRANSITION_MS,
-  DETAIL_CONTENT_DELAY_MS + DETAIL_CONTENT_DURATION_MS,
-);
+const TRANSITION_EPSILON = 1.5;
 
 function toCenteredSquare(rect) {
   if (!rect) return null;
@@ -26,11 +21,75 @@ function toCenteredSquare(rect) {
   return { left: cx - size / 2, top: cy - size / 2, width: size, height: size };
 }
 
+function createStackedVinylRect(sleeveRect) {
+  const sleeve = toCenteredSquare(sleeveRect);
+  if (!sleeve) return null;
+  const size = sleeve.width * 0.96;
+  const cx = sleeve.left + sleeve.width / 2;
+  const cy = sleeve.top + sleeve.height / 2;
+  return {
+    left: cx - size / 2,
+    top: cy - size / 2,
+    width: size,
+    height: size,
+  };
+}
+
+function rectMatches(a, b, epsilon = TRANSITION_EPSILON) {
+  if (!a || !b) return false;
+  return (
+    Math.abs(a.left - b.left) <= epsilon &&
+    Math.abs(a.top - b.top) <= epsilon &&
+    Math.abs(a.width - b.width) <= epsilon &&
+    Math.abs(a.height - b.height) <= epsilon
+  );
+}
+
 function BackIcon() {
   return (
     <svg className="icon detail-header__back-icon" viewBox="0 0 24 24" aria-hidden="true">
       <path d="m15 18-6-6 6-6" />
     </svg>
+  );
+}
+
+function TransitionAlbumOverlay({
+  album,
+  sleeveRect,
+  vinylRect,
+  animated = false,
+  onSleeveTransitionEnd,
+}) {
+  if (!album || !sleeveRect || !vinylRect) {
+    return null;
+  }
+
+  return (
+    <div className={`transition-overlay${animated ? " transition-overlay--animated" : ""}`} aria-hidden="true">
+      <div
+        className="transition-overlay__vinyl"
+        style={{
+          left: `${vinylRect.left}px`,
+          top: `${vinylRect.top}px`,
+          width: `${vinylRect.width}px`,
+          height: `${vinylRect.height}px`,
+        }}
+      >
+        <VinylDisc artImage={album.vinylArt} stickers={[]} size="100%" />
+      </div>
+      <div
+        className="transition-overlay__sleeve"
+        style={{
+          left: `${sleeveRect.left}px`,
+          top: `${sleeveRect.top}px`,
+          width: `${sleeveRect.width}px`,
+          height: `${sleeveRect.height}px`,
+        }}
+        onTransitionEnd={onSleeveTransitionEnd}
+      >
+        <img src={album.cover} alt="" />
+      </div>
+    </div>
   );
 }
 
@@ -49,21 +108,20 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
   const { albums, isLoading, error } = useAlbums();
   const [favoriteOverrides, setFavoriteOverrides] = useState({});
-  const [view, setView] = useState(initialView);
-  const [transitionPhase, setTransitionPhase] = useState(initialView === "detail" ? "detail" : "library");
-  const [selectedAlbumId, setSelectedAlbumId] = useState(null);
+  const [scene, setScene] = useState(initialView === "detail" ? "detail" : "library");
+  const [selectedAlbumId, setSelectedAlbumId] = useState(initialView === "detail" ? "ctm-vind" : null);
   const [focusedAlbumId, setFocusedAlbumId] = useState(null);
-  const [sleeveHeroRect, setSleeveHeroRect] = useState(null);
-  const [sleeveAnimated, setSleeveAnimated] = useState(false);
+  const [transitionOverlay, setTransitionOverlay] = useState(null);
   const [bgLayers, setBgLayers] = useState([
     { src: FALLBACK_COVER, active: true },
     { src: FALLBACK_COVER, active: false },
   ]);
   const librarySourceRectRef = useRef(null);
   const focusedSlotRectRef = useRef(null);
-  const sleeveRafRef = useRef(null);
-  const backTimerRef = useRef(null);
-  const transitionTimerRef = useRef(null);
+  const detailMediaRectsRef = useRef({ sleeveRect: null, vinylRect: null, albumId: null });
+  const sceneRef = useRef(scene);
+  const overlayRef = useRef(transitionOverlay);
+  const overlayRafRef = useRef(null);
   const bgActiveRef = useRef(0);
 
   const albumsWithFavoriteState = useMemo(
@@ -75,20 +133,23 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     [albums, favoriteOverrides],
   );
 
-  const selectedAlbum = useMemo(
-    () =>
-      albumsWithFavoriteState.find((a) => a.id === selectedAlbumId) ??
-      albumsWithFavoriteState.find((a) => a.id === "ctm-vind") ??
-      albumsWithFavoriteState[0],
-    [albumsWithFavoriteState, selectedAlbumId],
+  const defaultAlbum = useMemo(
+    () => albumsWithFavoriteState.find((a) => a.id === "ctm-vind") ?? albumsWithFavoriteState[0] ?? null,
+    [albumsWithFavoriteState],
   );
+
+  const selectedAlbum = useMemo(() => {
+    if (!selectedAlbumId) {
+      return scene === "detail" ? defaultAlbum : null;
+    }
+    return albumsWithFavoriteState.find((a) => a.id === selectedAlbumId) ?? defaultAlbum;
+  }, [albumsWithFavoriteState, defaultAlbum, scene, selectedAlbumId]);
 
   const focusedAlbum = useMemo(
     () =>
       albumsWithFavoriteState.find((album) => album.id === focusedAlbumId) ??
-      albumsWithFavoriteState.find((album) => album.id === "ctm-vind") ??
-      albumsWithFavoriteState[0],
-    [albumsWithFavoriteState, focusedAlbumId],
+      defaultAlbum,
+    [albumsWithFavoriteState, defaultAlbum, focusedAlbumId],
   );
 
   const toggleFavorite = useCallback((albumId) => {
@@ -103,7 +164,16 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   }, [albums]);
 
   useEffect(() => {
-    const nextSrc = focusedAlbum?.cover || FALLBACK_COVER;
+    sceneRef.current = scene;
+  }, [scene]);
+
+  useEffect(() => {
+    overlayRef.current = transitionOverlay;
+  }, [transitionOverlay]);
+
+  useEffect(() => {
+    const backgroundAlbum = scene === "library" ? focusedAlbum : selectedAlbum ?? focusedAlbum;
+    const nextSrc = backgroundAlbum?.cover || FALLBACK_COVER;
     const active = bgActiveRef.current;
     const inactive = 1 - active;
     bgActiveRef.current = inactive;
@@ -116,87 +186,177 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
       next[active] = { ...prev[active], active: false };
       return next;
     });
-  }, [focusedAlbum]);
+  }, [focusedAlbum, scene, selectedAlbum]);
 
-  function clearTimers() {
-    if (sleeveRafRef.current) { cancelAnimationFrame(sleeveRafRef.current); sleeveRafRef.current = null; }
-    if (backTimerRef.current) { clearTimeout(backTimerRef.current); backTimerRef.current = null; }
-    if (transitionTimerRef.current) { clearTimeout(transitionTimerRef.current); transitionTimerRef.current = null; }
+  function clearOverlayFrame() {
+    if (overlayRafRef.current) {
+      cancelAnimationFrame(overlayRafRef.current);
+      overlayRafRef.current = null;
+    }
+  }
+
+  function moveOverlayToTarget(sleeveRect, vinylRect) {
+    clearOverlayFrame();
+    overlayRafRef.current = requestAnimationFrame(() => {
+      setTransitionOverlay((current) =>
+        current
+          ? {
+              ...current,
+              sleeveRect,
+              vinylRect,
+              animated: true,
+            }
+          : current,
+      );
+      overlayRafRef.current = null;
+    });
   }
 
   function handleOpenAlbum(album, meta = {}) {
-    clearTimers();
-    const from = toCenteredSquare(meta.sourceRect ?? null);
-    librarySourceRectRef.current = from;
+    clearOverlayFrame();
+    const sourceSleeveRect = toCenteredSquare(meta.sourceRect ?? focusedSlotRectRef.current ?? null);
+    const sourceVinylRect = createStackedVinylRect(sourceSleeveRect);
+    librarySourceRectRef.current = sourceSleeveRect;
     setSelectedAlbumId(album.id);
-    setTransitionPhase("opening");
-    // Place hero at carousel position immediately (no animation), then transition to detail position
-    setSleeveHeroRect(from);
-    setSleeveAnimated(false);
-    setView("detail");
-    // onSleeveReady (called by DetailContent after layout) will push it to the detail position
+    setScene("opening");
+    setTransitionOverlay(
+      sourceSleeveRect && sourceVinylRect
+        ? {
+            albumId: album.id,
+            sleeveRect: sourceSleeveRect,
+            vinylRect: sourceVinylRect,
+            animated: false,
+          }
+        : null,
+    );
   }
 
-  // Called by DetailContent once the detail sleeve placeholder is laid out
-  const handleSleeveReady = useCallback((rect) => {
-    const to = toCenteredSquare(rect);
-    sleeveRafRef.current = requestAnimationFrame(() => {
-      setSleeveHeroRect(to);
-      setSleeveAnimated(true);
-      sleeveRafRef.current = null;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (transitionPhase !== "opening") {
-      return undefined;
-    }
-
-    transitionTimerRef.current = setTimeout(() => {
-      setTransitionPhase("detail");
-      transitionTimerRef.current = null;
-    }, TRANSITION_SETTLE_MS);
-
-    return () => {
-      if (transitionTimerRef.current) {
-        clearTimeout(transitionTimerRef.current);
-        transitionTimerRef.current = null;
-      }
-    };
-  }, [transitionPhase]);
-
-  function handleBack() {
-    clearTimers();
-    const from = toCenteredSquare(focusedSlotRectRef.current ?? librarySourceRectRef.current);
-    setTransitionPhase("closing");
-    setView("library");
-
-    if (from) {
-      setSleeveAnimated(true);
-      setSleeveHeroRect(from);
-    } else {
-      setSleeveHeroRect(null);
-      setSleeveAnimated(false);
+  const handleDetailLayoutChange = useCallback((layout) => {
+    detailMediaRectsRef.current = layout;
+    if (
+      sceneRef.current !== "opening" ||
+      !selectedAlbumId ||
+      layout.albumId !== selectedAlbumId
+    ) {
       return;
     }
 
-    backTimerRef.current = setTimeout(() => {
-      setSleeveHeroRect(null);
-      setSleeveAnimated(false);
-      setTransitionPhase("library");
-      backTimerRef.current = null;
-    }, SLEEVE_TRANSITION_MS);
+    const nextSleeveRect = toCenteredSquare(layout.sleeveRect);
+    const nextVinylRect = layout.vinylRect;
+    const currentOverlay = overlayRef.current;
+    if (!nextSleeveRect || !nextVinylRect || !currentOverlay || currentOverlay.albumId !== selectedAlbumId) {
+      return;
+    }
+
+    if (!currentOverlay.animated) {
+      moveOverlayToTarget(nextSleeveRect, nextVinylRect);
+      return;
+    }
+
+    if (
+      !rectMatches(currentOverlay.sleeveRect, nextSleeveRect) ||
+      !rectMatches(currentOverlay.vinylRect, nextVinylRect)
+    ) {
+      setTransitionOverlay((current) =>
+        current && current.albumId === selectedAlbumId
+          ? {
+              ...current,
+              sleeveRect: nextSleeveRect,
+              vinylRect: nextVinylRect,
+              animated: true,
+            }
+          : current,
+      );
+    }
+  }, [selectedAlbumId]);
+
+  const handleFocusedSlotLayout = useCallback((rect) => {
+    focusedSlotRectRef.current = rect;
+
+    if (sceneRef.current !== "closing") {
+      return;
+    }
+
+    const currentOverlay = overlayRef.current;
+    if (!currentOverlay?.animated) {
+      return;
+    }
+
+    const nextSleeveRect = toCenteredSquare(rect);
+    const nextVinylRect = createStackedVinylRect(nextSleeveRect);
+    if (!nextSleeveRect || !nextVinylRect) {
+      return;
+    }
+
+    if (
+      !rectMatches(currentOverlay.sleeveRect, nextSleeveRect) ||
+      !rectMatches(currentOverlay.vinylRect, nextVinylRect)
+    ) {
+      setTransitionOverlay((current) =>
+        current
+          ? {
+              ...current,
+              sleeveRect: nextSleeveRect,
+              vinylRect: nextVinylRect,
+              animated: true,
+            }
+          : current,
+      );
+    }
+  }, []);
+
+  function handleBack() {
+    clearOverlayFrame();
+    const sourceSleeveRect = toCenteredSquare(detailMediaRectsRef.current.sleeveRect);
+    const sourceVinylRect = detailMediaRectsRef.current.vinylRect;
+    const targetSleeveRect = toCenteredSquare(focusedSlotRectRef.current ?? librarySourceRectRef.current);
+    const targetVinylRect = createStackedVinylRect(targetSleeveRect);
+
+    if (!selectedAlbum || !sourceSleeveRect || !sourceVinylRect || !targetSleeveRect || !targetVinylRect) {
+      setScene("library");
+      setTransitionOverlay(null);
+      setSelectedAlbumId(null);
+      return;
+    }
+
+    setScene("closing");
+    setTransitionOverlay({
+      albumId: selectedAlbum.id,
+      sleeveRect: sourceSleeveRect,
+      vinylRect: sourceVinylRect,
+      animated: false,
+    });
+    moveOverlayToTarget(targetSleeveRect, targetVinylRect);
   }
 
-  const isDetail = view === "detail";
-  const appVisualState =
-    transitionPhase === "opening" || transitionPhase === "detail" ? "detail" : "library";
+  const handleOverlayTransitionEnd = useCallback((event) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    const currentScene = sceneRef.current;
+    const currentOverlay = overlayRef.current;
+    if (!currentOverlay?.animated) {
+      return;
+    }
+
+    if (currentScene === "opening") {
+      setScene("detail");
+      setTransitionOverlay(null);
+      return;
+    }
+
+    if (currentScene === "closing") {
+      setScene("library");
+      setTransitionOverlay(null);
+      setSelectedAlbumId(null);
+    }
+  }, []);
 
   return (
-    <div className="app" data-view={appVisualState} data-transition-phase={transitionPhase}>
+    <div className="app" data-scene={scene}>
       <CarouselBlurBackground layers={bgLayers} fallbackSrc={FALLBACK_COVER} />
 
-      {/* Single header — two faces that cross-fade + change height */}
       <header className="app-header">
         <div className="app-header__face app-header__face--library">
           <div className="app-header__face-inner">
@@ -227,50 +387,39 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
         </div>
       </header>
 
-      {/* Single body — both panels always mounted, CSS controls visibility */}
       <div className="app-body">
-        <div className="app-panel app-panel--library" aria-hidden={appVisualState === "detail"}>
+        <div className="app-panel app-panel--library" aria-hidden={scene === "detail"}>
           {isLoading && <p className="library-preview__status">Loading collection…</p>}
           {error && <p className="library-preview__status">{error}</p>}
           <LibraryCarousel
             albums={albumsWithFavoriteState}
             onOpenAlbum={handleOpenAlbum}
             onFocusedAlbumChange={setFocusedAlbumId}
-            onFocusedSlotLayout={(rect) => {
-              focusedSlotRectRef.current = rect;
-            }}
+            isActive={scene === "library"}
+            onFocusedSlotLayout={handleFocusedSlotLayout}
             onToggleFavorite={toggleFavorite}
-            isExtracting={isDetail}
+            isExtracting={scene === "opening"}
           />
         </div>
 
-        <div className="app-panel app-panel--detail" aria-hidden={appVisualState === "library"}>
+        <div className="app-panel app-panel--detail" aria-hidden={scene === "library"}>
           {selectedAlbum && (
             <DetailContent
               album={selectedAlbum}
-              onSleeveReady={handleSleeveReady}
-              measureKey={isDetail ? selectedAlbumId : null}
+              onLayoutChange={handleDetailLayoutChange}
             />
           )}
         </div>
 
-        {/* Persistent sleeve hero — always a single element, its position just transitions */}
-        {sleeveHeroRect && selectedAlbum && (
-          <div
-            className={`app-sleeve-hero${sleeveAnimated ? " app-sleeve-hero--animated" : ""}`}
-            style={{
-              left: `${sleeveHeroRect.left}px`,
-              top: `${sleeveHeroRect.top}px`,
-              width: `${sleeveHeroRect.width}px`,
-              height: `${sleeveHeroRect.height}px`,
-            }}
-          >
-            <img src={selectedAlbum.cover} alt="" />
-          </div>
-        )}
+        <TransitionAlbumOverlay
+          album={selectedAlbum}
+          sleeveRect={transitionOverlay?.sleeveRect}
+          vinylRect={transitionOverlay?.vinylRect}
+          animated={transitionOverlay?.animated}
+          onSleeveTransitionEnd={handleOverlayTransitionEnd}
+        />
       </div>
 
-      {/* Footer with stickers — never changes */}
       <footer className="app-footer">
         <StickerStrip stickers={stickerAssets} />
       </footer>
