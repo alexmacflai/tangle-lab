@@ -351,7 +351,7 @@ p {
 .detail-sidebar {
   display: flex;
   min-height: 0;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-end;
   overflow: hidden;
 }
@@ -952,6 +952,7 @@ p {
 .album-info-panel {
   display: flex;
   width: 400px;
+  height: 100%;
   overflow: hidden;
   flex-direction: column;
   border-radius: 8px;
@@ -1021,7 +1022,7 @@ p {
 }
 
 .album-info-panel--detail {
-  height: auto;
+  height: 100%;
   max-height: 100%;
   min-height: 0;
 }

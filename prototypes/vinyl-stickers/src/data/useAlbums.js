@@ -48,6 +48,7 @@ function mapAlbum(rawAlbum, index) {
       rawAlbum.releaseContext ?? rawAlbum.comment ?? "No release notes available.",
     audioUrl: vinylAssetPath(rawAlbum.audioUrl) || null,
     vinylArt: SHARED_VINYL_ART,
+    isFavorite: Boolean(rawAlbum.isFavorite),
   };
 }
 

@@ -42,6 +42,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   }
 
   const { albums, isLoading, error } = useAlbums();
+  const [favoriteOverrides, setFavoriteOverrides] = useState({});
   const [view, setView] = useState(initialView);
   const [selectedAlbumId, setSelectedAlbumId] = useState(null);
   const [focusedAlbumId, setFocusedAlbumId] = useState(null);
@@ -56,21 +57,41 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   const backTimerRef = useRef(null);
   const bgActiveRef = useRef(0);
 
+  const albumsWithFavoriteState = useMemo(
+    () =>
+      albums.map((album) => ({
+        ...album,
+        isFavorite: favoriteOverrides[album.id] ?? album.isFavorite ?? false,
+      })),
+    [albums, favoriteOverrides],
+  );
+
   const selectedAlbum = useMemo(
     () =>
-      albums.find((a) => a.id === selectedAlbumId) ??
-      albums.find((a) => a.id === "ctm-vind") ??
-      albums[0],
-    [albums, selectedAlbumId],
+      albumsWithFavoriteState.find((a) => a.id === selectedAlbumId) ??
+      albumsWithFavoriteState.find((a) => a.id === "ctm-vind") ??
+      albumsWithFavoriteState[0],
+    [albumsWithFavoriteState, selectedAlbumId],
   );
 
   const focusedAlbum = useMemo(
     () =>
-      albums.find((album) => album.id === focusedAlbumId) ??
-      albums.find((album) => album.id === "ctm-vind") ??
-      albums[0],
-    [albums, focusedAlbumId],
+      albumsWithFavoriteState.find((album) => album.id === focusedAlbumId) ??
+      albumsWithFavoriteState.find((album) => album.id === "ctm-vind") ??
+      albumsWithFavoriteState[0],
+    [albumsWithFavoriteState, focusedAlbumId],
   );
+
+  const toggleFavorite = useCallback((albumId) => {
+    setFavoriteOverrides((current) => {
+      const sourceAlbum = albums.find((album) => album.id === albumId);
+      const currentValue = current[albumId] ?? sourceAlbum?.isFavorite ?? false;
+      return {
+        ...current,
+        [albumId]: !currentValue,
+      };
+    });
+  }, [albums]);
 
   useEffect(() => {
     const nextSrc = focusedAlbum?.cover || FALLBACK_COVER;
@@ -157,12 +178,13 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
             </button>
             <div className="detail-header__actions">
               <button
-                className="detail-header__action detail-header__favorite is-active"
+                className={`detail-header__action detail-header__favorite${selectedAlbum?.isFavorite ? " is-active" : ""}`}
                 type="button"
-                aria-label="Favorite album"
-                aria-pressed="true"
+                aria-label={selectedAlbum?.isFavorite ? "Remove favorite" : "Favorite album"}
+                aria-pressed={selectedAlbum?.isFavorite ?? false}
+                onClick={() => selectedAlbum && toggleFavorite(selectedAlbum.id)}
               >
-                <HeartIcon filled />
+                <HeartIcon filled={selectedAlbum?.isFavorite} />
               </button>
               <button className="detail-header__action" type="button" aria-label="More options">
                 <MoreIcon />
@@ -178,9 +200,10 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
           {isLoading && <p className="library-preview__status">Loading collection…</p>}
           {error && <p className="library-preview__status">{error}</p>}
           <LibraryCarousel
-            albums={albums}
+            albums={albumsWithFavoriteState}
             onOpenAlbum={handleOpenAlbum}
             onFocusedAlbumChange={setFocusedAlbumId}
+            onToggleFavorite={toggleFavorite}
             isExtracting={isDetail}
           />
         </div>

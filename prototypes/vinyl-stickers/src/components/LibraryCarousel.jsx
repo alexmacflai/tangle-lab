@@ -150,6 +150,7 @@ export function LibraryCarousel({
   albums,
   onOpenAlbum,
   onFocusedAlbumChange,
+  onToggleFavorite,
   isExtracting = false,
 }) {
   const albumCount = albums.length;
@@ -318,7 +319,8 @@ export function LibraryCarousel({
                   album={slot.album}
                   state={slot.offset === 0 ? "focused" : "resting"}
                   showStickers={slot.offset === 0 || slot.album.id === "schallaufnahmen"}
-                  initialFavorite={slot.album.id === "vind"}
+                  isFavorite={slot.album.isFavorite}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </div>
             ))}

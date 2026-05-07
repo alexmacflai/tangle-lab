@@ -6,10 +6,10 @@ export function AlbumCard({
   album,
   state = "resting",
   showStickers = false,
-  initialFavorite = false,
+  isFavorite = false,
+  onToggleFavorite,
   className = "",
 }) {
-  const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
   const isFocused = state === "focused";
 
@@ -57,7 +57,7 @@ export function AlbumCard({
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
-              setIsFavorite((current) => !current);
+              onToggleFavorite?.(album.id);
             }}
           >
             <HeartIcon filled={isFavorite} />
