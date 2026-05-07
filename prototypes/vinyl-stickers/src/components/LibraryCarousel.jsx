@@ -150,6 +150,7 @@ export function LibraryCarousel({
   albums,
   onOpenAlbum,
   onFocusedAlbumChange,
+  onFocusedSlotLayout,
   onToggleFavorite,
   isExtracting = false,
 }) {
@@ -233,6 +234,41 @@ export function LibraryCarousel({
     if (!hasAlbums) return;
     onFocusedAlbumChange?.(albums[focusedIndex]?.id ?? null);
   }, [albums, focusedIndex, hasAlbums, onFocusedAlbumChange]);
+
+  useLayoutEffect(() => {
+    if (!hasAlbums || typeof onFocusedSlotLayout !== "function") return;
+    const root = sectionRef.current;
+    if (!root) return;
+
+    const report = () => {
+      const sleeveEl = root.querySelector(
+        '.carousel-preview__slot[data-carousel-offset="0"] .album-card__cover-wrap',
+      );
+      const rect = sleeveEl?.getBoundingClientRect?.();
+      if (!rect) return;
+      onFocusedSlotLayout({
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    const observer = new ResizeObserver(report);
+    observer.observe(root);
+    report();
+
+    const raf1 = requestAnimationFrame(report);
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(report));
+    window.addEventListener("resize", report);
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.removeEventListener("resize", report);
+    };
+  }, [albums, focusedIndex, hasAlbums, onFocusedSlotLayout]);
 
   useEffect(() => {
     function onKeyDown(event) {

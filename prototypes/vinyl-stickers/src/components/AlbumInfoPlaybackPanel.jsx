@@ -91,14 +91,16 @@ export function AlbumInfoPlaybackPanel({
           <p>{album.artist}</p>
         </div>
 
-        <dl className="album-info-panel__metadata">
-          {metadataRows.map(([label, key]) => (
-            <div className="album-info-panel__row" key={key}>
-              <dt>{label}</dt>
-              <dd>{album[key]}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="album-info-panel__metadata-wrap">
+          <dl className="album-info-panel__metadata">
+            {metadataRows.map(([label, key]) => (
+              <div className="album-info-panel__row" key={key}>
+                <dt>{label}</dt>
+                <dd>{album[key]}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </div>
 
       <div className="album-info-panel__playback">

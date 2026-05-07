@@ -11,6 +11,12 @@ import { stickerAssets } from "./data/libraryMock.js";
 import { FALLBACK_COVER, useAlbums } from "./data/useAlbums.js";
 
 const SLEEVE_TRANSITION_MS = 520;
+const DETAIL_CONTENT_DELAY_MS = 160;
+const DETAIL_CONTENT_DURATION_MS = 360;
+const TRANSITION_SETTLE_MS = Math.max(
+  SLEEVE_TRANSITION_MS,
+  DETAIL_CONTENT_DELAY_MS + DETAIL_CONTENT_DURATION_MS,
+);
 
 function toCenteredSquare(rect) {
   if (!rect) return null;
@@ -44,6 +50,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   const { albums, isLoading, error } = useAlbums();
   const [favoriteOverrides, setFavoriteOverrides] = useState({});
   const [view, setView] = useState(initialView);
+  const [transitionPhase, setTransitionPhase] = useState(initialView === "detail" ? "detail" : "library");
   const [selectedAlbumId, setSelectedAlbumId] = useState(null);
   const [focusedAlbumId, setFocusedAlbumId] = useState(null);
   const [sleeveHeroRect, setSleeveHeroRect] = useState(null);
@@ -53,8 +60,10 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     { src: FALLBACK_COVER, active: false },
   ]);
   const librarySourceRectRef = useRef(null);
+  const focusedSlotRectRef = useRef(null);
   const sleeveRafRef = useRef(null);
   const backTimerRef = useRef(null);
+  const transitionTimerRef = useRef(null);
   const bgActiveRef = useRef(0);
 
   const albumsWithFavoriteState = useMemo(
@@ -112,6 +121,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   function clearTimers() {
     if (sleeveRafRef.current) { cancelAnimationFrame(sleeveRafRef.current); sleeveRafRef.current = null; }
     if (backTimerRef.current) { clearTimeout(backTimerRef.current); backTimerRef.current = null; }
+    if (transitionTimerRef.current) { clearTimeout(transitionTimerRef.current); transitionTimerRef.current = null; }
   }
 
   function handleOpenAlbum(album, meta = {}) {
@@ -119,6 +129,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     const from = toCenteredSquare(meta.sourceRect ?? null);
     librarySourceRectRef.current = from;
     setSelectedAlbumId(album.id);
+    setTransitionPhase("opening");
     // Place hero at carousel position immediately (no animation), then transition to detail position
     setSleeveHeroRect(from);
     setSleeveAnimated(false);
@@ -136,9 +147,28 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     });
   }, []);
 
+  useEffect(() => {
+    if (transitionPhase !== "opening") {
+      return undefined;
+    }
+
+    transitionTimerRef.current = setTimeout(() => {
+      setTransitionPhase("detail");
+      transitionTimerRef.current = null;
+    }, TRANSITION_SETTLE_MS);
+
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
+    };
+  }, [transitionPhase]);
+
   function handleBack() {
     clearTimers();
-    const from = librarySourceRectRef.current;
+    const from = toCenteredSquare(focusedSlotRectRef.current ?? librarySourceRectRef.current);
+    setTransitionPhase("closing");
     setView("library");
 
     if (from) {
@@ -153,14 +183,17 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     backTimerRef.current = setTimeout(() => {
       setSleeveHeroRect(null);
       setSleeveAnimated(false);
+      setTransitionPhase("library");
       backTimerRef.current = null;
     }, SLEEVE_TRANSITION_MS);
   }
 
   const isDetail = view === "detail";
+  const appVisualState =
+    transitionPhase === "opening" || transitionPhase === "detail" ? "detail" : "library";
 
   return (
-    <div className="app" data-view={view}>
+    <div className="app" data-view={appVisualState} data-transition-phase={transitionPhase}>
       <CarouselBlurBackground layers={bgLayers} fallbackSrc={FALLBACK_COVER} />
 
       {/* Single header — two faces that cross-fade + change height */}
@@ -196,19 +229,22 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
       {/* Single body — both panels always mounted, CSS controls visibility */}
       <div className="app-body">
-        <div className="app-panel app-panel--library">
+        <div className="app-panel app-panel--library" aria-hidden={appVisualState === "detail"}>
           {isLoading && <p className="library-preview__status">Loading collection…</p>}
           {error && <p className="library-preview__status">{error}</p>}
           <LibraryCarousel
             albums={albumsWithFavoriteState}
             onOpenAlbum={handleOpenAlbum}
             onFocusedAlbumChange={setFocusedAlbumId}
+            onFocusedSlotLayout={(rect) => {
+              focusedSlotRectRef.current = rect;
+            }}
             onToggleFavorite={toggleFavorite}
             isExtracting={isDetail}
           />
         </div>
 
-        <div className="app-panel app-panel--detail">
+        <div className="app-panel app-panel--detail" aria-hidden={appVisualState === "library"}>
           {selectedAlbum && (
             <DetailContent
               album={selectedAlbum}
