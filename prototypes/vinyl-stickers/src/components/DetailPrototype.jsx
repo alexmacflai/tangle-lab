@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { vinylAssetPath } from "../data/assetPaths.js";
+import { getSurfaceStickers } from "../data/stickerSurfaces.js";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
 import { VinylDisc } from "./VinylDisc.jsx";
@@ -25,8 +26,9 @@ function formatTime(seconds) {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 }
 
-function DetailSleeve({ album, sleeveTargetRef }) {
+function DetailSleeve({ album, sleeveTargetRef, onStickerDragStart }) {
   const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
+  const sleeveStickers = getSurfaceStickers(album, "sleeve");
 
   useEffect(() => {
     setCoverSrc(album.cover || FALLBACK_COVER);
@@ -36,6 +38,22 @@ function DetailSleeve({ album, sleeveTargetRef }) {
     <div className="detail-sleeve-rail" aria-hidden="true">
       <div ref={sleeveTargetRef} className="detail-sleeve">
         <img src={coverSrc} alt="" onError={() => setCoverSrc(FALLBACK_COVER)} />
+        {sleeveStickers.map((sticker) => (
+          <img
+            className="detail-sleeve__sticker"
+            key={sticker.id}
+            src={sticker.src}
+            alt=""
+            onPointerDown={(event) => onStickerDragStart?.(album, sticker, "sleeve", event)}
+            style={{
+              "--sticker-x": `${sticker.x}%`,
+              "--sticker-y": `${sticker.y}%`,
+              "--sticker-width": `${sticker.width}px`,
+              "--sticker-height": `${sticker.height}px`,
+              "--sticker-rotation": `${sticker.rotation}deg`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -44,8 +62,10 @@ function DetailSleeve({ album, sleeveTargetRef }) {
 export function DetailContent({
   album,
   onLayoutChange,
+  onStickerDragStart,
 }) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
+  const vinylStickers = getSurfaceStickers(album, "vinyl");
   const [isPlaying, setIsPlaying] = useState(false);
   const [visualProgress, setVisualProgress] = useState(INITIAL_PROGRESS);
   const [trackDurationSeconds, setTrackDurationSeconds] = useState(TRACK_DURATION_SECONDS);
@@ -428,12 +448,13 @@ export function DetailContent({
         hidden
       />
       <section ref={detailMainRef} className="detail-main" aria-label="Album detail">
-        <DetailSleeve album={album} sleeveTargetRef={sleeveRef} />
+        <DetailSleeve album={album} sleeveTargetRef={sleeveRef} onStickerDragStart={onStickerDragStart} />
         <div ref={vinylMotionRef} className="detail-vinyl-motion">
           <div ref={vinylStageRef} className="detail-vinyl-stage">
             <VinylDisc
               artImage={album.vinylArt}
-              stickers={[]}
+              stickers={vinylStickers}
+              onStickerDragStart={(sticker, event) => onStickerDragStart?.(album, sticker, "vinyl", event)}
               size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
               isPlaying={isPlaying}
               onSpinRateChange={handleSpinRateChange}

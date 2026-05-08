@@ -9,9 +9,11 @@ import { LibraryHeader } from "./components/LibraryHeader.jsx";
 import { StickerStrip } from "./components/StickerStrip.jsx";
 import { VinylDisc } from "./components/VinylDisc.jsx";
 import { stickerAssets } from "./data/libraryMock.js";
+import { getSurfaceStickers } from "./data/stickerSurfaces.js";
 import { FALLBACK_COVER, useAlbums } from "./data/useAlbums.js";
 
 const TRANSITION_EPSILON = 1.5;
+const STICKER_DROP_SURFACE_LIMIT = 3;
 
 function toCenteredSquare(rect) {
   if (!rect) return null;
@@ -33,6 +35,17 @@ function createStackedVinylRect(sleeveRect) {
     width: size,
     height: size,
   };
+}
+
+function rectContainsPoint(rect, point) {
+  return (
+    rect &&
+    point &&
+    point.x >= rect.left &&
+    point.x <= rect.left + rect.width &&
+    point.y >= rect.top &&
+    point.y <= rect.top + rect.height
+  );
 }
 
 function rectMatches(a, b, epsilon = TRANSITION_EPSILON) {
@@ -64,30 +77,49 @@ function TransitionAlbumOverlay({
     return null;
   }
 
+  const sleeveStickers = getSurfaceStickers(album, "sleeve");
+  const vinylStickers = getSurfaceStickers(album, "vinyl");
+
   return (
     <div className={`transition-overlay${animated ? " transition-overlay--animated" : ""}`} aria-hidden="true">
       <div
         className="transition-overlay__vinyl"
         style={{
-          left: `${vinylRect.left}px`,
-          top: `${vinylRect.top}px`,
+          "--overlay-x": `${vinylRect.left}px`,
+          "--overlay-y": `${vinylRect.top}px`,
           width: `${vinylRect.width}px`,
           height: `${vinylRect.height}px`,
         }}
       >
-        <VinylDisc artImage={album.vinylArt} stickers={[]} size="100%" />
+        <VinylDisc artImage={album.vinylArt} stickers={vinylStickers} size="100%" />
       </div>
       <div
         className="transition-overlay__sleeve"
         style={{
-          left: `${sleeveRect.left}px`,
-          top: `${sleeveRect.top}px`,
+          "--overlay-x": `${sleeveRect.left}px`,
+          "--overlay-y": `${sleeveRect.top}px`,
+          "--surface-scale": `${sleeveRect.width / 480}`,
           width: `${sleeveRect.width}px`,
           height: `${sleeveRect.height}px`,
         }}
         onTransitionEnd={onSleeveTransitionEnd}
       >
         <img src={album.cover} alt="" />
+        {sleeveStickers.map((sticker) => (
+          <img
+            className="transition-overlay__sticker"
+            key={sticker.id}
+            src={sticker.src}
+            alt=""
+            style={{
+              "--sticker-x": `${sticker.x}%`,
+              "--sticker-y": `${sticker.y}%`,
+              "--sticker-width": `${sticker.width}px`,
+              "--sticker-height": `${sticker.height}px`,
+              "--sticker-rotation": `${sticker.rotation}deg`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -108,6 +140,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
   const { albums, isLoading, error } = useAlbums();
   const [favoriteOverrides, setFavoriteOverrides] = useState({});
+  const [stickerOverrides, setStickerOverrides] = useState({});
   const [scene, setScene] = useState(initialView === "detail" ? "detail" : "library");
   const [selectedAlbumId, setSelectedAlbumId] = useState(initialView === "detail" ? "ctm-vind" : null);
   const [focusedAlbumId, setFocusedAlbumId] = useState(null);
@@ -116,9 +149,12 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     { src: FALLBACK_COVER, active: true },
     { src: FALLBACK_COVER, active: false },
   ]);
+  const [draggedSticker, setDraggedSticker] = useState(null);
   const librarySourceRectRef = useRef(null);
   const focusedSlotRectRef = useRef(null);
   const detailMediaRectsRef = useRef({ sleeveRect: null, vinylRect: null, albumId: null });
+  const draggedStickerRef = useRef(null);
+  const stickerDragCleanupRef = useRef(null);
   const sceneRef = useRef(scene);
   const overlayRef = useRef(transitionOverlay);
   const overlayRafRef = useRef(null);
@@ -129,8 +165,9 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
       albums.map((album) => ({
         ...album,
         isFavorite: favoriteOverrides[album.id] ?? album.isFavorite ?? false,
+        stickers: stickerOverrides[album.id] ?? album.stickers ?? [],
       })),
-    [albums, favoriteOverrides],
+    [albums, favoriteOverrides, stickerOverrides],
   );
 
   const defaultAlbum = useMemo(
@@ -162,6 +199,165 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
       };
     });
   }, [albums]);
+
+  const removeStickerFromAlbum = useCallback((albumId, stickerId) => {
+    if (!albumId || !stickerId) return;
+
+    setStickerOverrides((current) => {
+      const album = albumsWithFavoriteState.find((candidate) => candidate.id === albumId);
+      const currentStickers = current[albumId] ?? album?.stickers ?? [];
+      return {
+        ...current,
+        [albumId]: currentStickers.filter((sticker) => sticker.id !== stickerId),
+      };
+    });
+  }, [albumsWithFavoriteState]);
+
+  const addStickerToAlbum = useCallback((albumId, sourceSticker, surface, point, targetRect, options = {}) => {
+    if (!albumId || !sourceSticker || !targetRect) return;
+
+    const x = ((point.x - targetRect.left) / targetRect.width) * 100;
+    const y = ((point.y - targetRect.top) / targetRect.height) * 100;
+    const placedSticker = {
+      ...sourceSticker,
+      id: options.reuseId ? sourceSticker.id : `${sourceSticker.id}-${surface}-${Date.now()}`,
+      surface,
+      x: Math.max(8, Math.min(92, x)),
+      y: Math.max(8, Math.min(92, y)),
+      rotation: Math.round(Math.random() * 28 - 14),
+    };
+
+    setStickerOverrides((current) => {
+      const album = albumsWithFavoriteState.find((candidate) => candidate.id === albumId);
+      const currentStickers = current[albumId] ?? album?.stickers ?? [];
+      const surfaceStickers = currentStickers.filter((sticker) => sticker.surface === surface);
+      if (surfaceStickers.length >= STICKER_DROP_SURFACE_LIMIT) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [albumId]: [...currentStickers, placedSticker],
+      };
+    });
+  }, [albumsWithFavoriteState]);
+
+  const clearStickerDragListeners = useCallback(() => {
+    stickerDragCleanupRef.current?.();
+    stickerDragCleanupRef.current = null;
+  }, []);
+
+  const finishStickerDrag = useCallback((point, drag = draggedStickerRef.current) => {
+    const currentDrag = drag;
+    draggedStickerRef.current = null;
+    clearStickerDragListeners();
+    setDraggedSticker(null);
+    if (!currentDrag) {
+      return;
+    }
+
+    const currentScene = sceneRef.current;
+    const shouldReuseId = currentDrag.source === "placed";
+
+    if (currentScene === "detail" && selectedAlbumId) {
+      const { sleeveRect, vinylRect } = detailMediaRectsRef.current;
+      if (rectContainsPoint(vinylRect, point)) {
+        addStickerToAlbum(selectedAlbumId, currentDrag.sticker, "vinyl", point, vinylRect, { reuseId: shouldReuseId });
+        return;
+      }
+
+      if (rectContainsPoint(sleeveRect, point)) {
+        addStickerToAlbum(selectedAlbumId, currentDrag.sticker, "sleeve", point, sleeveRect, { reuseId: shouldReuseId });
+      }
+      return;
+    }
+
+    if (currentScene === "library") {
+      const targetAlbumId = currentDrag.albumId ?? focusedAlbum?.id;
+      const targetRect = focusedSlotRectRef.current;
+      if (targetAlbumId && rectContainsPoint(targetRect, point)) {
+        addStickerToAlbum(targetAlbumId, currentDrag.sticker, "sleeve", point, targetRect, { reuseId: shouldReuseId });
+      }
+    }
+  }, [addStickerToAlbum, clearStickerDragListeners, focusedAlbum, selectedAlbumId]);
+
+  const beginStickerDrag = useCallback((drag, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    clearStickerDragListeners();
+    const initialDrag = {
+      ...drag,
+      x: event.clientX,
+      y: event.clientY,
+    };
+    draggedStickerRef.current = initialDrag;
+    setDraggedSticker(initialDrag);
+
+    const handlePointerMove = (moveEvent) => {
+      setDraggedSticker((current) => {
+        if (!current) return current;
+        const nextDrag = {
+          ...current,
+          x: moveEvent.clientX,
+          y: moveEvent.clientY,
+        };
+        draggedStickerRef.current = nextDrag;
+        return nextDrag;
+      });
+    };
+
+    const handlePointerEnd = (endEvent) => {
+      finishStickerDrag(
+        {
+          x: endEvent.clientX,
+          y: endEvent.clientY,
+        },
+        draggedStickerRef.current,
+      );
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, true);
+    window.addEventListener("pointerup", handlePointerEnd, true);
+    window.addEventListener("pointercancel", handlePointerEnd, true);
+    stickerDragCleanupRef.current = () => {
+      window.removeEventListener("pointermove", handlePointerMove, true);
+      window.removeEventListener("pointerup", handlePointerEnd, true);
+      window.removeEventListener("pointercancel", handlePointerEnd, true);
+    };
+  }, [clearStickerDragListeners, finishStickerDrag]);
+
+  const handleStickerDragStart = useCallback((sticker, event) => {
+    const currentScene = sceneRef.current;
+    if (currentScene !== "detail" && currentScene !== "library") return;
+    const albumId = currentScene === "detail" ? selectedAlbumId : focusedAlbum?.id;
+    if (!albumId) return;
+
+    beginStickerDrag({
+      sticker,
+      albumId,
+      source: "tray",
+    }, event);
+  }, [beginStickerDrag, focusedAlbum, selectedAlbumId]);
+
+  const handlePlacedStickerDragStart = useCallback((album, sticker, surface, event) => {
+    const currentScene = sceneRef.current;
+    if (currentScene !== "detail" && currentScene !== "library") return;
+    const albumId = album?.id;
+    if (!albumId) return;
+
+    removeStickerFromAlbum(albumId, sticker.id);
+    beginStickerDrag({
+      sticker: {
+        ...sticker,
+        surface,
+      },
+      albumId,
+      source: "placed",
+    }, event);
+  }, [beginStickerDrag, removeStickerFromAlbum]);
+
+  useEffect(() => () => clearStickerDragListeners(), [clearStickerDragListeners]);
 
   useEffect(() => {
     sceneRef.current = scene;
@@ -272,44 +468,13 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
   const handleFocusedSlotLayout = useCallback((rect) => {
     focusedSlotRectRef.current = rect;
-
-    if (sceneRef.current !== "closing") {
-      return;
-    }
-
-    const currentOverlay = overlayRef.current;
-    if (!currentOverlay?.animated) {
-      return;
-    }
-
-    const nextSleeveRect = toCenteredSquare(rect);
-    const nextVinylRect = createStackedVinylRect(nextSleeveRect);
-    if (!nextSleeveRect || !nextVinylRect) {
-      return;
-    }
-
-    if (
-      !rectMatches(currentOverlay.sleeveRect, nextSleeveRect) ||
-      !rectMatches(currentOverlay.vinylRect, nextVinylRect)
-    ) {
-      setTransitionOverlay((current) =>
-        current
-          ? {
-              ...current,
-              sleeveRect: nextSleeveRect,
-              vinylRect: nextVinylRect,
-              animated: true,
-            }
-          : current,
-      );
-    }
   }, []);
 
   function handleBack() {
     clearOverlayFrame();
     const sourceSleeveRect = toCenteredSquare(detailMediaRectsRef.current.sleeveRect);
     const sourceVinylRect = detailMediaRectsRef.current.vinylRect;
-    const targetSleeveRect = toCenteredSquare(focusedSlotRectRef.current ?? librarySourceRectRef.current);
+    const targetSleeveRect = toCenteredSquare(librarySourceRectRef.current ?? focusedSlotRectRef.current);
     const targetVinylRect = createStackedVinylRect(targetSleeveRect);
 
     if (!selectedAlbum || !sourceSleeveRect || !sourceVinylRect || !targetSleeveRect || !targetVinylRect) {
@@ -331,6 +496,9 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
   const handleOverlayTransitionEnd = useCallback((event) => {
     if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.propertyName !== "transform") {
       return;
     }
 
@@ -398,6 +566,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
             isActive={scene === "library"}
             onFocusedSlotLayout={handleFocusedSlotLayout}
             onToggleFavorite={toggleFavorite}
+            onStickerDragStart={handlePlacedStickerDragStart}
             isExtracting={scene === "opening"}
           />
         </div>
@@ -407,6 +576,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
             <DetailContent
               album={selectedAlbum}
               onLayoutChange={handleDetailLayoutChange}
+              onStickerDragStart={handlePlacedStickerDragStart}
             />
           )}
         </div>
@@ -420,8 +590,23 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
         />
       </div>
 
+      {draggedSticker && (
+        <div
+          className="sticker-drag-preview"
+          aria-hidden="true"
+          style={{
+            left: `${draggedSticker.x}px`,
+            top: `${draggedSticker.y}px`,
+            "--sticker-width": `${draggedSticker.sticker.width}px`,
+            "--sticker-height": `${draggedSticker.sticker.height}px`,
+          }}
+        >
+          <img src={draggedSticker.sticker.src} alt="" />
+        </div>
+      )}
+
       <footer className="app-footer">
-        <StickerStrip stickers={stickerAssets} />
+        <StickerStrip stickers={stickerAssets} onStickerDragStart={handleStickerDragStart} />
       </footer>
     </div>
   );

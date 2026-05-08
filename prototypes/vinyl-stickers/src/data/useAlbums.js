@@ -31,13 +31,33 @@ function normalizeGenre(genre) {
   return "Uncategorized";
 }
 
+function normalizeSticker(rawSticker, index) {
+  const normalizedX =
+    typeof rawSticker.x === "number" && rawSticker.x <= 1 ? rawSticker.x * 100 : rawSticker.x;
+  const normalizedY =
+    typeof rawSticker.y === "number" && rawSticker.y <= 1 ? rawSticker.y * 100 : rawSticker.y;
+  const scale = typeof rawSticker.scale === "number" && rawSticker.scale > 0 ? rawSticker.scale : 1;
+
+  return {
+    id: rawSticker.id ?? `sticker-${index + 1}`,
+    label: rawSticker.label ?? "Sticker",
+    src: vinylAssetPath(rawSticker.src ?? rawSticker.image) || null,
+    surface: rawSticker.surface === "vinyl" ? "vinyl" : "sleeve",
+    x: typeof normalizedX === "number" ? normalizedX : 50,
+    y: typeof normalizedY === "number" ? normalizedY : 50,
+    width: Math.round((rawSticker.width ?? 72) * scale),
+    height: Math.round((rawSticker.height ?? 72) * scale),
+    rotation: typeof rawSticker.rotation === "number" ? rawSticker.rotation : 0,
+  };
+}
+
 function mapAlbum(rawAlbum, index) {
   return {
     id: rawAlbum.id ?? `album-${index + 1}`,
     title: rawAlbum.title ?? "Untitled Album",
     artist: rawAlbum.artist ?? "Unknown Artist",
     cover: vinylAssetPath(rawAlbum.sleeveImage) || FALLBACK_COVER,
-    stickers: Array.isArray(rawAlbum.stickers) ? rawAlbum.stickers : [],
+    stickers: Array.isArray(rawAlbum.stickers) ? rawAlbum.stickers.map(normalizeSticker) : [],
     year: rawAlbum.year ?? "Unknown",
     label: rawAlbum.label ?? "Unknown",
     catalogNumber: rawAlbum.catalogNumber ?? "N/A",

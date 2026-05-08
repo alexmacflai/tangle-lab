@@ -2,7 +2,7 @@ import { PlusIcon } from "./Icons.jsx";
 import { StickerItem } from "./StickerItem.jsx";
 import { vinylAssetPath } from "../data/assetPaths.js";
 
-export function StickerStrip({ stickers }) {
+export function StickerStrip({ stickers, onStickerDragStart }) {
   return (
     <footer className="sticker-strip">
       <div className="sticker-strip__intro">
@@ -14,7 +14,7 @@ export function StickerStrip({ stickers }) {
       </div>
       <div className="sticker-strip__items">
         {stickers.map((sticker) => (
-          <StickerItem key={sticker.id} sticker={sticker} />
+          <StickerItem key={sticker.id} sticker={sticker} onDragStart={onStickerDragStart} />
         ))}
         <button className="sticker-strip__add" type="button" aria-label="Add sticker">
           <PlusIcon />

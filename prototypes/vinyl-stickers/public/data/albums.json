@@ -68,7 +68,30 @@
       "releaseContext": "Written and performed by CTM; produced by Jakob Littauer.",
       "addedOn": "2026-02-05",
       "isFavorite": true,
-      "stickers": []
+      "stickers": [
+        {
+          "id": "ctm-tune-sleeve",
+          "label": "Tune sticker",
+          "image": "/media/stickers/tune.png",
+          "surface": "sleeve",
+          "x": 0.17,
+          "y": 0.32,
+          "width": 78,
+          "height": 78,
+          "rotation": 12
+        },
+        {
+          "id": "ctm-star-vinyl",
+          "label": "Star sticker",
+          "image": "/media/stickers/star.png",
+          "surface": "vinyl",
+          "x": 0.68,
+          "y": 0.28,
+          "width": 78,
+          "height": 76,
+          "rotation": 18
+        }
+      ]
     },
     {
       "id": "bloop-schallaufnahmen",
@@ -93,7 +116,19 @@
       "releaseContext": "Originally released on double vinyl in 1999.",
       "addedOn": "2026-02-14",
       "isFavorite": false,
-      "stickers": []
+      "stickers": [
+        {
+          "id": "bloop-lightning-sleeve",
+          "label": "Lightning sticker",
+          "image": "/media/stickers/lightning.png",
+          "surface": "sleeve",
+          "x": 0.71,
+          "y": 0.33,
+          "width": 52,
+          "height": 90,
+          "rotation": -12
+        }
+      ]
     },
     {
       "id": "two-lone-swordsmen-further-reminders",

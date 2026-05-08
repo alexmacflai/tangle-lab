@@ -37,6 +37,7 @@ export function VinylDisc({
   stickers = placeholderStickers,
   size = 420,
   onSpinRateChange,
+  onStickerDragStart,
   externalProgress,
   externalProgressSource,
   progressPerTurn = 0.18,
@@ -291,6 +292,10 @@ export function VinylDisc({
               key={sticker.id}
               src={sticker.src}
               alt=""
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                onStickerDragStart?.(sticker, event);
+              }}
               style={{
                 "--sticker-x": `${sticker.x}%`,
                 "--sticker-y": `${sticker.y}%`,

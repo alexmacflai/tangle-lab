@@ -153,6 +153,7 @@ export function LibraryCarousel({
   isActive = true,
   onFocusedSlotLayout,
   onToggleFavorite,
+  onStickerDragStart,
   isExtracting = false,
 }) {
   const albumCount = albums.length;
@@ -363,6 +364,7 @@ export function LibraryCarousel({
                   showStickers={slot.offset === 0 || slot.album.id === "schallaufnahmen"}
                   isFavorite={slot.album.isFavorite}
                   onToggleFavorite={onToggleFavorite}
+                  onStickerDragStart={onStickerDragStart}
                 />
               </div>
             ))}

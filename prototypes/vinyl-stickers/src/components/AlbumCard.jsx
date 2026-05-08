@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getSurfaceStickers } from "../data/stickerSurfaces.js";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { HeartIcon, MoreIcon } from "./Icons.jsx";
 
@@ -8,10 +9,12 @@ export function AlbumCard({
   showStickers = false,
   isFavorite = false,
   onToggleFavorite,
+  onStickerDragStart,
   className = "",
 }) {
   const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
   const isFocused = state === "focused";
+  const sleeveStickers = getSurfaceStickers(album, "sleeve");
 
   useEffect(() => {
     setCoverSrc(album.cover || FALLBACK_COVER);
@@ -27,12 +30,13 @@ export function AlbumCard({
           onError={() => setCoverSrc(FALLBACK_COVER)}
         />
         {showStickers &&
-          album.stickers?.map((sticker) => (
+          sleeveStickers.map((sticker) => (
             <img
               className="album-card__sticker"
               key={sticker.id}
               src={sticker.src}
               alt={sticker.label}
+              onPointerDown={(event) => onStickerDragStart?.(album, sticker, "sleeve", event)}
               style={{
                 "--sticker-x": `${sticker.x}%`,
                 "--sticker-y": `${sticker.y}%`,

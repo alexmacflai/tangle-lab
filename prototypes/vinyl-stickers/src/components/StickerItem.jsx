@@ -4,7 +4,7 @@ function randomRotation() {
   return Math.round(Math.random() * 30 - 15);
 }
 
-export function StickerItem({ sticker, interactive = true, className = "" }) {
+export function StickerItem({ sticker, interactive = true, className = "", onDragStart }) {
   const [isGrabbing, setIsGrabbing] = useState(false);
   const [rotation, setRotation] = useState(0);
 
@@ -16,6 +16,7 @@ export function StickerItem({ sticker, interactive = true, className = "" }) {
     event.currentTarget.setPointerCapture(event.pointerId);
     setRotation(randomRotation());
     setIsGrabbing(true);
+    onDragStart?.(sticker, event);
   }
 
   function handlePointerUp(event) {
