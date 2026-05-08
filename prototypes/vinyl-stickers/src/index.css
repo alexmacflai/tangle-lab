@@ -663,31 +663,29 @@ p {
 
 .carousel-bg-wrap{
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 220vh;
-  height: 220vh;
-  transform: translate(-50%, -50%);
-  border-radius: 32px;
-  opacity: 0.45;
+
+  width: 100%;
+  height: 100%;
+  opacity: 8.45;
 }
 
 .carousel-bg {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 24vh;
-  height: 24vh;
-  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  transform: scale(200%);
   border-radius: 32px;
-  /* overflow: hidden; */
-  filter: blur(100px);
+
 }
 
 .carousel-bg__layer {
   position: absolute;
-  inset: -6%;
   overflow: hidden;
+  filter: blur(100px);
+  aspect-ratio: 1/1;
+  height: 50vh;
 }
 
 .carousel-bg__img {

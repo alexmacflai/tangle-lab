@@ -59,6 +59,10 @@ function rectMatches(a, b, epsilon = TRANSITION_EPSILON) {
   );
 }
 
+function normalizeDegrees(degrees) {
+  return ((degrees % 360) + 360) % 360;
+}
+
 function getSurfacePointPercent(point, targetRect, rotationDegrees = 0) {
   if (!point || !targetRect) {
     return null;
@@ -77,6 +81,65 @@ function getSurfacePointPercent(point, targetRect, rotationDegrees = 0) {
   return {
     x: (localX / targetRect.width) * 100,
     y: (localY / targetRect.height) * 100,
+  };
+}
+
+function getElementSurfacePointPercent(element, point) {
+  const quad = element?.getBoxQuads?.()[0];
+  if (!quad) {
+    const rect = element?.getBoundingClientRect?.();
+    return getSurfacePointPercent(point, rect);
+  }
+
+  const origin = quad.p1;
+  const xAxis = {
+    x: quad.p2.x - origin.x,
+    y: quad.p2.y - origin.y,
+  };
+  const yAxis = {
+    x: quad.p4.x - origin.x,
+    y: quad.p4.y - origin.y,
+  };
+  const pointer = {
+    x: point.x - origin.x,
+    y: point.y - origin.y,
+  };
+  const determinant = xAxis.x * yAxis.y - xAxis.y * yAxis.x;
+
+  if (Math.abs(determinant) < 0.001) {
+    const rect = element?.getBoundingClientRect?.();
+    return getSurfacePointPercent(point, rect);
+  }
+
+  const u = (pointer.x * yAxis.y - pointer.y * yAxis.x) / determinant;
+  const v = (xAxis.x * pointer.y - xAxis.y * pointer.x) / determinant;
+
+  return {
+    x: u * 100,
+    y: v * 100,
+  };
+}
+
+function getLibrarySleeveDropTarget(point) {
+  const element = document.elementFromPoint(point.x, point.y);
+  const sleeveEl = element?.closest?.(".album-card__cover-wrap");
+  const slotEl = sleeveEl?.closest?.("[data-album-id]");
+  const albumId = slotEl?.dataset?.albumId;
+  const rect = sleeveEl?.getBoundingClientRect?.();
+
+  if (!albumId || !rect || !rectContainsPoint(rect, point)) {
+    return null;
+  }
+
+  return {
+    albumId,
+    surfacePoint: getElementSurfacePointPercent(sleeveEl, point),
+    rect: {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    },
   };
 }
 
@@ -223,16 +286,19 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   const addStickerToAlbum = useCallback((albumId, sourceSticker, surface, point, targetRect, options = {}) => {
     if (!albumId || !sourceSticker || !targetRect) return;
 
-    const surfacePoint = getSurfacePointPercent(point, targetRect, options.rotationDegrees ?? 0);
+    const surfacePoint =
+      options.surfacePoint ?? getSurfacePointPercent(point, targetRect, options.rotationDegrees ?? 0);
     if (!surfacePoint) return;
 
+    const baseRotation =
+      typeof options.rotation === "number" ? options.rotation : Math.round(Math.random() * 28 - 14);
     const placedSticker = {
       ...sourceSticker,
       id: options.reuseId ? sourceSticker.id : `${sourceSticker.id}-${surface}-${Date.now()}`,
       surface,
       x: Math.max(8, Math.min(92, surfacePoint.x)),
       y: Math.max(8, Math.min(92, surfacePoint.y)),
-      rotation: Math.round(Math.random() * 28 - 14),
+      rotation: baseRotation,
     };
 
     setStickerOverrides((current) => {
@@ -270,9 +336,11 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     if (currentScene === "detail" && selectedAlbumId) {
       const { sleeveRect, vinylRect } = detailMediaRectsRef.current;
       if (rectContainsPoint(vinylRect, point)) {
+        const vinylRotation = normalizeDegrees(detailVinylRotationRef.current);
         addStickerToAlbum(selectedAlbumId, currentDrag.sticker, "vinyl", point, vinylRect, {
           reuseId: shouldReuseId,
-          rotationDegrees: detailVinylRotationRef.current,
+          rotationDegrees: vinylRotation,
+          rotation: normalizeDegrees(-vinylRotation),
         });
         return;
       }
@@ -284,13 +352,15 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     }
 
     if (currentScene === "library") {
-      const targetAlbumId = currentDrag.albumId ?? focusedAlbum?.id;
-      const targetRect = focusedSlotRectRef.current;
-      if (targetAlbumId && rectContainsPoint(targetRect, point)) {
-        addStickerToAlbum(targetAlbumId, currentDrag.sticker, "sleeve", point, targetRect, { reuseId: shouldReuseId });
+      const target = getLibrarySleeveDropTarget(point);
+      if (target) {
+        addStickerToAlbum(target.albumId, currentDrag.sticker, "sleeve", point, target.rect, {
+          reuseId: shouldReuseId,
+          surfacePoint: target.surfacePoint,
+        });
       }
     }
-  }, [addStickerToAlbum, clearStickerDragListeners, focusedAlbum, selectedAlbumId]);
+  }, [addStickerToAlbum, clearStickerDragListeners, selectedAlbumId]);
 
   const beginStickerDrag = useCallback((drag, event) => {
     event.preventDefault();

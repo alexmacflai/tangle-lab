@@ -342,6 +342,7 @@ export function LibraryCarousel({
               <div
                 className="carousel-preview__slot"
                 key={slot.album.id}
+                data-album-id={slot.album.id}
                 role={Math.abs(slot.offset) <= CLICKABLE_RANGE ? "button" : undefined}
                 tabIndex={Math.abs(slot.offset) <= CLICKABLE_RANGE ? 0 : -1}
                 aria-hidden={Math.abs(slot.offset) > CLICKABLE_RANGE || undefined}
