@@ -361,7 +361,7 @@ export function LibraryCarousel({
                 <AlbumCard
                   album={slot.album}
                   state={slot.offset === 0 ? "focused" : "resting"}
-                  showStickers={slot.offset === 0 || slot.album.id === "schallaufnahmen"}
+                  showStickers
                   isFavorite={slot.album.isFavorite}
                   onToggleFavorite={onToggleFavorite}
                   onStickerDragStart={onStickerDragStart}

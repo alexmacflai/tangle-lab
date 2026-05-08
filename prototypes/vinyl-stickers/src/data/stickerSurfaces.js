@@ -1,4 +1,4 @@
-const MAX_SURFACE_STICKERS = 3;
+const MAX_SURFACE_STICKERS = 5;
 
 export function getSurfaceStickers(album, surface) {
   const stickers = Array.isArray(album?.stickers) ? album.stickers : [];

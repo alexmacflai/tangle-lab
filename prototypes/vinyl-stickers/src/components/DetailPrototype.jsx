@@ -3,6 +3,7 @@ import { vinylAssetPath } from "../data/assetPaths.js";
 import { getSurfaceStickers } from "../data/stickerSurfaces.js";
 import { FALLBACK_COVER } from "../data/useAlbums.js";
 import { AlbumInfoPlaybackPanel } from "./AlbumInfoPlaybackPanel.jsx";
+import { SleeveStickerLayer } from "./SleeveStickerLayer.jsx";
 import { VinylDisc } from "./VinylDisc.jsx";
 
 const AUDIO_RATE_MIN = 0.08;
@@ -28,7 +29,6 @@ function formatTime(seconds) {
 
 function DetailSleeve({ album, sleeveTargetRef, onStickerDragStart }) {
   const [coverSrc, setCoverSrc] = useState(album.cover || FALLBACK_COVER);
-  const sleeveStickers = getSurfaceStickers(album, "sleeve");
 
   useEffect(() => {
     setCoverSrc(album.cover || FALLBACK_COVER);
@@ -38,22 +38,11 @@ function DetailSleeve({ album, sleeveTargetRef, onStickerDragStart }) {
     <div className="detail-sleeve-rail" aria-hidden="true">
       <div ref={sleeveTargetRef} className="detail-sleeve">
         <img src={coverSrc} alt="" onError={() => setCoverSrc(FALLBACK_COVER)} />
-        {sleeveStickers.map((sticker) => (
-          <img
-            className="detail-sleeve__sticker"
-            key={sticker.id}
-            src={sticker.src}
-            alt=""
-            onPointerDown={(event) => onStickerDragStart?.(album, sticker, "sleeve", event)}
-            style={{
-              "--sticker-x": `${sticker.x}%`,
-              "--sticker-y": `${sticker.y}%`,
-              "--sticker-width": `${sticker.width}px`,
-              "--sticker-height": `${sticker.height}px`,
-              "--sticker-rotation": `${sticker.rotation}deg`,
-            }}
-          />
-        ))}
+        <SleeveStickerLayer
+          album={album}
+          stickerClassName="detail-sleeve__sticker"
+          onStickerDragStart={onStickerDragStart}
+        />
       </div>
     </div>
   );
@@ -62,6 +51,7 @@ function DetailSleeve({ album, sleeveTargetRef, onStickerDragStart }) {
 export function DetailContent({
   album,
   onLayoutChange,
+  onVinylRotationChange,
   onStickerDragStart,
 }) {
   const [bgSrc, setBgSrc] = useState(album.cover || FALLBACK_COVER);
@@ -455,6 +445,7 @@ export function DetailContent({
               artImage={album.vinylArt}
               stickers={vinylStickers}
               onStickerDragStart={(sticker, event) => onStickerDragStart?.(album, sticker, "vinyl", event)}
+              onRotationChange={onVinylRotationChange}
               size="min(100%, var(--detail-vinyl-max), calc(100vh - 306px))"
               isPlaying={isPlaying}
               onSpinRateChange={handleSpinRateChange}

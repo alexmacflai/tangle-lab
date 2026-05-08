@@ -38,6 +38,7 @@ export function VinylDisc({
   size = 420,
   onSpinRateChange,
   onStickerDragStart,
+  onRotationChange,
   externalProgress,
   externalProgressSource,
   progressPerTurn = 0.18,
@@ -46,7 +47,9 @@ export function VinylDisc({
   const [artSrc, setArtSrc] = useState(artImage || SHARED_VINYL_ART);
   const spinningLayersRef = useRef(null);
   const rampFrameRef = useRef(null);
+  const rotationFrameRef = useRef(null);
   const spinAnimationRef = useRef(null);
+  const rotationChangeRef = useRef(onRotationChange);
   const isPlayingRef = useRef(isPlaying);
   const isDraggingRef = useRef(false);
   const lastAngleRef = useRef(0);
@@ -54,6 +57,10 @@ export function VinylDisc({
   const manualRateRef = useRef(0);
   const lastAppliedExternalProgressRef = useRef(null);
   isPlayingRef.current = isPlaying;
+
+  useEffect(() => {
+    rotationChangeRef.current = onRotationChange;
+  }, [onRotationChange]);
 
   const setPlaybackRate = (animation, rate) => {
     if (typeof animation.updatePlaybackRate === "function") {
@@ -154,9 +161,23 @@ export function VinylDisc({
 
     spinAnimationRef.current = animation;
 
+    const reportRotation = () => {
+      if (typeof rotationChangeRef.current === "function") {
+        const currentTime = typeof animation.currentTime === "number" ? animation.currentTime : 0;
+        const rotation = ((currentTime / SPIN_DURATION_MS) * 360) % 360;
+        rotationChangeRef.current(rotation < 0 ? rotation + 360 : rotation);
+      }
+      rotationFrameRef.current = requestAnimationFrame(reportRotation);
+    };
+
+    rotationFrameRef.current = requestAnimationFrame(reportRotation);
+
     return () => {
       if (rampFrameRef.current) {
         cancelAnimationFrame(rampFrameRef.current);
+      }
+      if (rotationFrameRef.current) {
+        cancelAnimationFrame(rotationFrameRef.current);
       }
       if (spinAnimationRef.current) {
         spinAnimationRef.current.cancel();

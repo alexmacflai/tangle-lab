@@ -6,6 +6,7 @@ import { DetailContent } from "./components/DetailPrototype.jsx";
 import { HeartIcon, MoreIcon } from "./components/Icons.jsx";
 import { LibraryCarousel } from "./components/LibraryCarousel.jsx";
 import { LibraryHeader } from "./components/LibraryHeader.jsx";
+import { SleeveStickerLayer } from "./components/SleeveStickerLayer.jsx";
 import { StickerStrip } from "./components/StickerStrip.jsx";
 import { VinylDisc } from "./components/VinylDisc.jsx";
 import { stickerAssets } from "./data/libraryMock.js";
@@ -13,7 +14,7 @@ import { getSurfaceStickers } from "./data/stickerSurfaces.js";
 import { FALLBACK_COVER, useAlbums } from "./data/useAlbums.js";
 
 const TRANSITION_EPSILON = 1.5;
-const STICKER_DROP_SURFACE_LIMIT = 3;
+const STICKER_DROP_SURFACE_LIMIT = 5;
 
 function toCenteredSquare(rect) {
   if (!rect) return null;
@@ -58,6 +59,27 @@ function rectMatches(a, b, epsilon = TRANSITION_EPSILON) {
   );
 }
 
+function getSurfacePointPercent(point, targetRect, rotationDegrees = 0) {
+  if (!point || !targetRect) {
+    return null;
+  }
+
+  const centerX = targetRect.left + targetRect.width / 2;
+  const centerY = targetRect.top + targetRect.height / 2;
+  const dx = point.x - centerX;
+  const dy = point.y - centerY;
+  const angle = (-rotationDegrees * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const localX = dx * cos - dy * sin + targetRect.width / 2;
+  const localY = dx * sin + dy * cos + targetRect.height / 2;
+
+  return {
+    x: (localX / targetRect.width) * 100,
+    y: (localY / targetRect.height) * 100,
+  };
+}
+
 function BackIcon() {
   return (
     <svg className="icon detail-header__back-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -77,7 +99,6 @@ function TransitionAlbumOverlay({
     return null;
   }
 
-  const sleeveStickers = getSurfaceStickers(album, "sleeve");
   const vinylStickers = getSurfaceStickers(album, "vinyl");
 
   return (
@@ -98,28 +119,13 @@ function TransitionAlbumOverlay({
         style={{
           "--overlay-x": `${sleeveRect.left}px`,
           "--overlay-y": `${sleeveRect.top}px`,
-          "--surface-scale": `${sleeveRect.width / 480}`,
           width: `${sleeveRect.width}px`,
           height: `${sleeveRect.height}px`,
         }}
         onTransitionEnd={onSleeveTransitionEnd}
       >
         <img src={album.cover} alt="" />
-        {sleeveStickers.map((sticker) => (
-          <img
-            className="transition-overlay__sticker"
-            key={sticker.id}
-            src={sticker.src}
-            alt=""
-            style={{
-              "--sticker-x": `${sticker.x}%`,
-              "--sticker-y": `${sticker.y}%`,
-              "--sticker-width": `${sticker.width}px`,
-              "--sticker-height": `${sticker.height}px`,
-              "--sticker-rotation": `${sticker.rotation}deg`,
-            }}
-          />
-        ))}
+        <SleeveStickerLayer album={album} stickerClassName="transition-overlay__sticker" />
       </div>
     </div>
   );
@@ -153,6 +159,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   const librarySourceRectRef = useRef(null);
   const focusedSlotRectRef = useRef(null);
   const detailMediaRectsRef = useRef({ sleeveRect: null, vinylRect: null, albumId: null });
+  const detailVinylRotationRef = useRef(0);
   const draggedStickerRef = useRef(null);
   const stickerDragCleanupRef = useRef(null);
   const sceneRef = useRef(scene);
@@ -216,14 +223,15 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
   const addStickerToAlbum = useCallback((albumId, sourceSticker, surface, point, targetRect, options = {}) => {
     if (!albumId || !sourceSticker || !targetRect) return;
 
-    const x = ((point.x - targetRect.left) / targetRect.width) * 100;
-    const y = ((point.y - targetRect.top) / targetRect.height) * 100;
+    const surfacePoint = getSurfacePointPercent(point, targetRect, options.rotationDegrees ?? 0);
+    if (!surfacePoint) return;
+
     const placedSticker = {
       ...sourceSticker,
       id: options.reuseId ? sourceSticker.id : `${sourceSticker.id}-${surface}-${Date.now()}`,
       surface,
-      x: Math.max(8, Math.min(92, x)),
-      y: Math.max(8, Math.min(92, y)),
+      x: Math.max(8, Math.min(92, surfacePoint.x)),
+      y: Math.max(8, Math.min(92, surfacePoint.y)),
       rotation: Math.round(Math.random() * 28 - 14),
     };
 
@@ -262,7 +270,10 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     if (currentScene === "detail" && selectedAlbumId) {
       const { sleeveRect, vinylRect } = detailMediaRectsRef.current;
       if (rectContainsPoint(vinylRect, point)) {
-        addStickerToAlbum(selectedAlbumId, currentDrag.sticker, "vinyl", point, vinylRect, { reuseId: shouldReuseId });
+        addStickerToAlbum(selectedAlbumId, currentDrag.sticker, "vinyl", point, vinylRect, {
+          reuseId: shouldReuseId,
+          rotationDegrees: detailVinylRotationRef.current,
+        });
         return;
       }
 
@@ -372,11 +383,14 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
     const nextSrc = backgroundAlbum?.cover || FALLBACK_COVER;
     const active = bgActiveRef.current;
     const inactive = 1 - active;
-    bgActiveRef.current = inactive;
     setBgLayers((prev) => {
+      if (prev[active]?.src === nextSrc && prev[active]?.active) {
+        return prev;
+      }
       if (prev[inactive]?.src === nextSrc && prev[inactive]?.active) {
         return prev;
       }
+      bgActiveRef.current = inactive;
       const next = [...prev];
       next[inactive] = { src: nextSrc, active: true };
       next[active] = { ...prev[active], active: false };
@@ -468,6 +482,10 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
 
   const handleFocusedSlotLayout = useCallback((rect) => {
     focusedSlotRectRef.current = rect;
+  }, []);
+
+  const handleVinylRotationChange = useCallback((rotationDegrees) => {
+    detailVinylRotationRef.current = rotationDegrees;
   }, []);
 
   function handleBack() {
@@ -576,6 +594,7 @@ export function VinylStickersApp({ initialView = "library", initialMode = "defau
             <DetailContent
               album={selectedAlbum}
               onLayoutChange={handleDetailLayoutChange}
+              onVinylRotationChange={handleVinylRotationChange}
               onStickerDragStart={handlePlacedStickerDragStart}
             />
           )}
