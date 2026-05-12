@@ -1,0 +1,141 @@
+import { vinylAssetPath } from "./assetPaths.js";
+
+export const stickerAssets = [
+  {
+    id: "yeah",
+    label: "Yeah",
+    src: vinylAssetPath("/media/stickers/yeah.png"),
+    width: 97,
+    height: 61,
+  },
+  {
+    id: "tune",
+    label: "Tune",
+    src: vinylAssetPath("/media/stickers/tune.png"),
+    width: 78,
+    height: 78,
+  },
+  {
+    id: "feel-good",
+    label: "Feel good music",
+    src: vinylAssetPath("/media/stickers/feel-good-music.png"),
+    width: 75,
+    height: 85,
+  },
+  {
+    id: "peace",
+    label: "Peace",
+    src: vinylAssetPath("/media/stickers/peace.png"),
+    width: 59,
+    height: 93,
+  },
+  {
+    id: "smile",
+    label: "Smile",
+    src: vinylAssetPath("/media/stickers/smile.png"),
+    width: 90,
+    height: 90,
+  },
+  {
+    id: "eight-ball",
+    label: "Eight ball",
+    src: vinylAssetPath("/media/stickers/eight-ball.png"),
+    width: 85,
+    height: 85,
+  },
+  {
+    id: "star",
+    label: "Star",
+    src: vinylAssetPath("/media/stickers/star.png"),
+    width: 79,
+    height: 77,
+  },
+  {
+    id: "lightning",
+    label: "Lightning",
+    src: vinylAssetPath("/media/stickers/lightning.png"),
+    width: 52,
+    height: 90,
+  },
+];
+
+export const libraryAlbums = [
+  {
+    id: "further-reminders",
+    title: "Further Reminders",
+    artist: "The Lone Swordsmen",
+    cover: vinylAssetPath("/media/covers/further-reminders.png"),
+    stickers: [],
+  },
+  {
+    id: "contre-temps",
+    title: "Contre-Temps",
+    artist: "Flavien Berger",
+    cover: vinylAssetPath("/media/covers/contre-temps.png"),
+    stickers: [],
+  },
+  {
+    id: "vind",
+    title: "Vind",
+    artist: "CTM",
+    cover: vinylAssetPath("/media/covers/vind.png"),
+    stickers: [
+      {
+        id: "tune",
+        src: vinylAssetPath("/media/stickers/tune.png"),
+        label: "Tune sticker",
+        x: 14,
+        y: 32,
+        width: 78,
+        height: 78,
+        rotation: 12,
+      },
+      {
+        id: "eight-ball",
+        src: vinylAssetPath("/media/stickers/eight-ball.png"),
+        label: "Eight ball sticker",
+        x: 67,
+        y: 57,
+        width: 85,
+        height: 85,
+        rotation: 0,
+      },
+    ],
+  },
+  {
+    id: "schallaufnahmen",
+    title: "schallaufnahmen",
+    artist: "Bloop",
+    cover: vinylAssetPath("/media/covers/schallaufnahmen.png"),
+    stickers: [
+      {
+        id: "lightning",
+        src: vinylAssetPath("/media/stickers/lightning.png"),
+        label: "Lightning sticker",
+        x: 62,
+        y: 33,
+        width: 52,
+        height: 90,
+        rotation: 6,
+      },
+    ],
+  },
+  {
+    id: "either-or",
+    title: "Either/Or",
+    artist: "Elliott Smith",
+    cover: vinylAssetPath("/media/covers/either-or.png"),
+    stickers: [
+      {
+        id: "eight-ball-either",
+        src: vinylAssetPath("/media/stickers/eight-ball.png"),
+        label: "Eight ball sticker",
+        x: 70,
+        y: 60,
+        width: 72,
+        height: 72,
+        rotation: 0,
+      },
+    ],
+  },
+];

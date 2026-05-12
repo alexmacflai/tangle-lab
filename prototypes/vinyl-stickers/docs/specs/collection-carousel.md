@@ -40,8 +40,9 @@ Interaction:
 
 Build stages:
 
-1. **Static Collection Components**
-   - Build sleeve card and carousel layout with hardcoded mock data.
+1. **Library Component Foundation**
+   - Build sleeve card, header, controls, sticker strip, and carousel preview with hardcoded mock data.
+   - Add a components playground for state and variant review.
    - Show focused, adjacent, and far states.
    - Do not add real data loading, snapping physics, or detail transition.
    - Stop for user review.

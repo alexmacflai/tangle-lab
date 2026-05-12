@@ -27,6 +27,8 @@ The database should expose an `albums` array:
       "title": "Midnight Static",
       "artist": "The Soft Cuts",
       "year": 1984,
+      "addedOn": "2026-01-18",
+      "isFavorite": false,
       "coverImage": "/media/covers/midnight-static-cover.png",
       "sleeveImage": "/media/covers/midnight-static-sleeve.png",
       "vinylVariant": "black",
@@ -60,6 +62,8 @@ The database should expose an `albums` array:
 Field rules:
 
 - `album.id`, `track.id`, and `sticker.id` are stable strings.
+- `addedOn` is an ISO date string (`YYYY-MM-DD`) used for later sorting.
+- `isFavorite` is a boolean used for later favorite filtering and heart state.
 - `coverImage`, `sleeveImage`, `image`, and `audioUrl` are public URLs relative to the prototype root.
 - `vinylVariant` starts as a small string such as `black`, `purple`, `transparent`, or `marbled`.
 - `durationSeconds` is required even when audio is not playable.
@@ -69,6 +73,7 @@ Field rules:
 - Sticker `x` and `y` are normalized surface coordinates from `0` to `1`.
 - Sticker `rotation` is degrees.
 - Sticker `scale` is a visual multiplier.
+- Albums can keep `stickers: []` until placement editing exists.
 - Missing images should fall back to generated CSS or local placeholders.
 - Missing audio should keep controls usable in visual stub mode.
 
